@@ -715,6 +715,98 @@ def test_error_handling():
 
 
 # =============================================================================
+# LEAK TESTS
+# =============================================================================
+
+def test_leak_detection():
+    """Check for leftover resources from testing. Fail if any found, but clean up regardless."""
+    global pass_count, fail_count
+    print("\n# Leak Detection Tests")
+    print("-" * 40)
+    
+    leak_found = False
+    leaked_resources = []
+    cleaned_resources = []
+    
+    resource_types = [
+        ("posts", "get_all_posts", {"per_page": 100}, ["title", "id"]),
+        ("categories", "get_all_categories", {"per_page": 100}, ["name", "id"]),
+        ("tags", "get_all_tags", {"per_page": 100}, ["name", "id"]),
+        ("comments", "get_all_comments", {"per_page": 100}, ["id"]),
+        ("navigation", "get_all_navigation", {"per_page": 100}, ["id"]),
+    ]
+    
+    plural_to_singular = {
+        "posts": "post",
+        "categories": "category",
+        "tags": "tag",
+        "comments": "comment",
+        "navigation": "navigation",
+        "blocks": "block",
+    }
+    
+    for resource_type, tool_name, args, _ in resource_types:
+        result = call_tool(tool_name, args)
+        if "error" in result:
+            continue
+        
+        items_raw = result.get("items", [])
+        if not items_raw:
+            continue
+        
+        items = toon_to_json(items_raw) if isinstance(items_raw, str) else items_raw
+        if not items or not isinstance(items, list):
+            continue
+            
+        for item in items:
+            item_id = item.get("id")
+            item_title = item.get("title", item.get("name", ""))
+            item_raw = item_title.get("raw", item_title.get("rendered", "")) if isinstance(item_title, dict) else str(item_title)
+            
+            if rid in item_raw:
+                leaked_resources.append(f"{resource_type}/{item_id}: {item_raw[:50]}")
+                leak_found = True
+                
+                singular = plural_to_singular.get(resource_type, resource_type[:-1])
+                delete_tool = f"delete_{singular}_by_id"
+                delete_result = call_tool(delete_tool, {"id": item_id, "force": True})
+                if delete_result.get("deleted"):
+                    cleaned_resources.append(f"{singular} {item_id}")
+                    print(f"  [CLEANED] {singular} {item_id}: {item_raw[:50]}")
+    
+    if leak_found:
+        if len(cleaned_resources) == len(leaked_resources):
+            pass_count += 1
+            print(f"  [PASS] {len(cleaned_resources)} leak(s) detected and cleaned")
+            results.append({
+                "name": "leak_detection",
+                "tool": "multiple",
+                "status": "PASS",
+                "message": f"{len(cleaned_resources)} leak(s) detected and cleaned"
+            })
+        else:
+            fail_count += 1
+            print(f"  [FAIL] {len(leaked_resources)} leak(s) detected, {len(cleaned_resources)} cleaned")
+            for r in leaked_resources:
+                print(f"    - {r}")
+            results.append({
+                "name": "leak_detection",
+                "tool": "multiple",
+                "status": "FAIL",
+                "message": f"{len(leaked_resources) - len(cleaned_resources)} leak(s) not cleaned"
+            })
+    else:
+        pass_count += 1
+        print(f"  [PASS] No leaks detected")
+        results.append({
+            "name": "leak_detection",
+            "tool": "multiple",
+            "status": "PASS",
+            "message": "No leaks detected"
+        })
+
+
+# =============================================================================
 # MAIN
 # =============================================================================
 
@@ -739,6 +831,7 @@ def main():
     test_meta_tools()
     test_toon_verification()
     test_error_handling()
+    test_leak_detection()
     
     elapsed = time.time() - start_time
     
