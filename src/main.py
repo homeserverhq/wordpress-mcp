@@ -686,16 +686,14 @@ async def update_category(
 @mcp.tool()
 async def delete_category_by_id(
     id: int,
-    force: bool = False,
     ctx: Context = None
 ) -> dict[str, Any]:
-    """Delete a category by its ID.
+    """Delete a category by its ID (permanently - categories don't support trash).
 
     Args:
         id: The unique ID of the category to delete.
-        force: When False (default), permanently deletes (categories don't support trash).
     """
-    result = await get_client().delete_category_by_id(id, get_user_token(), force=True)
+    result = await get_client().delete_category_by_id(id, get_user_token())
     if isinstance(result, dict) and result.get("code"):
         raise Exception(result.get("message", f"Delete failed: {result.get('code')}"))
     return {"deleted": True}
@@ -808,16 +806,14 @@ async def update_tag(
 @mcp.tool()
 async def delete_tag_by_id(
     id: int,
-    force: bool = False,
     ctx: Context = None
 ) -> dict[str, Any]:
-    """Delete a tag by its ID.
+    """Delete a tag by its ID (permanently - tags don't support trash).
 
     Args:
         id: The unique ID of the tag to delete.
-        force: When False (default), permanently deletes (tags don't support trash).
     """
-    result = await get_client().delete_tag_by_id(id, get_user_token(), force=True)
+    result = await get_client().delete_tag_by_id(id, get_user_token())
     if isinstance(result, dict) and result.get("code"):
         raise Exception(result.get("message", f"Delete failed: {result.get('code')}"))
     return {"deleted": True}
@@ -947,16 +943,14 @@ async def update_comment(
 @mcp.tool()
 async def delete_comment_by_id(
     id: int,
-    force: bool = False,
     ctx: Context = None
 ) -> dict[str, Any]:
-    """Delete a comment by its ID.
+    """Delete a comment by its ID (permanently).
 
     Args:
         id: The unique ID of the comment to delete.
-        force: When False (default), moves to trash. When True, permanently deletes.
     """
-    result = await get_client().delete_comment_by_id(id, get_user_token(), force=force)
+    result = await get_client().delete_comment_by_id(id, get_user_token())
     if isinstance(result, dict) and result.get("code"):
         raise Exception(result.get("message", f"Delete failed: {result.get('code')}"))
     return {"deleted": True}
@@ -1151,16 +1145,14 @@ async def update_navigation(
 @mcp.tool()
 async def delete_navigation_by_id(
     id: int,
-    force: bool = False,
     ctx: Context = None
 ) -> dict[str, Any]:
-    """Delete a navigation menu by its ID.
+    """Delete a navigation menu by its ID (permanently).
 
     Args:
         id: The unique ID of the navigation menu to delete.
-        force: When False (default), moves to trash. When True, permanently deletes.
     """
-    result = await get_client().delete_navigation_by_id(id, get_user_token(), force=force)
+    result = await get_client().delete_navigation_by_id(id, get_user_token())
     if isinstance(result, dict) and result.get("code"):
         raise Exception(result.get("message", f"Delete failed: {result.get('code')}"))
     return {"deleted": True}
@@ -1283,16 +1275,14 @@ async def update_block(
 @mcp.tool()
 async def delete_block_by_id(
     id: int,
-    force: bool = False,
     ctx: Context = None
 ) -> dict[str, Any]:
-    """Delete a block by its ID.
+    """Delete a block by its ID (permanently).
 
     Args:
         id: The unique ID of the block to delete.
-        force: When False (default), moves to trash. When True, permanently deletes.
     """
-    result = await get_client().delete_block_by_id(id, get_user_token(), force=force)
+    result = await get_client().delete_block_by_id(id, get_user_token())
     if isinstance(result, dict) and result.get("code"):
         raise Exception(result.get("message", f"Delete failed: {result.get('code')}"))
     return {"deleted": True}

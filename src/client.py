@@ -291,9 +291,8 @@ class WordPressClient:
         self,
         category_id: int,
         api_key: Optional[str] = None,
-        force: bool = False,
     ) -> Any:
-        params = {"force": "true" if force else "false"}
+        params = {"force": "true"}
         return await self.delete(f"/wp/v2/categories/{category_id}", api_key, params=params)
 
     # =========================================================================
@@ -353,9 +352,8 @@ class WordPressClient:
         self,
         tag_id: int,
         api_key: Optional[str] = None,
-        force: bool = False,
     ) -> Any:
-        params = {"force": "true" if force else "false"}
+        params = {"force": "true"}
         return await self.delete(f"/wp/v2/tags/{tag_id}", api_key, params=params)
 
     # =========================================================================
@@ -425,9 +423,8 @@ class WordPressClient:
         self,
         comment_id: int,
         api_key: Optional[str] = None,
-        force: bool = False,
     ) -> Any:
-        params = {"force": "true" if force else "false"}
+        params = {"force": "true"}
         return await self.delete(f"/wp/v2/comments/{comment_id}", api_key, params=params)
 
     # =========================================================================
@@ -536,9 +533,8 @@ class WordPressClient:
         self,
         navigation_id: int,
         api_key: Optional[str] = None,
-        force: bool = False,
     ) -> Any:
-        params = {"force": "true" if force else "false"}
+        params = {"force": "true"}
         return await self.delete(f"/wp/v2/navigation/{navigation_id}", api_key, params=params)
 
     # =========================================================================
@@ -599,9 +595,8 @@ class WordPressClient:
         self,
         block_id: int,
         api_key: Optional[str] = None,
-        force: bool = False,
     ) -> Any:
-        params = {"force": "true" if force else "false"}
+        params = {"force": "true"}
         return await self.delete(f"/wp/v2/blocks/{block_id}", api_key, params=params)
 
     # =========================================================================

@@ -186,9 +186,17 @@ def test_posts():
     
     run_test("get_all_posts_filter_by_status", "get_all_posts", {"status": "publish", "per_page": 5})
     
-    run_test("get_post_by_id_basic", "get_post_by_id", {"id": 1}, expected_keys=["id", "title"])
+# Create a test post to use for by_id tests
+    test_post_result = call_tool("create_post", {
+        "title": f"Test Post for ID tests {rid}",
+        "content": "Content for ID testing",
+        "status": "publish"
+    })
+    test_post_id = test_post_result.get("id", 1)
     
-    run_test("get_post_by_id_include_all_fields", "get_post_by_id", {"id": 1, "include_all_fields": True})
+    run_test("get_post_by_id_basic", "get_post_by_id", {"id": test_post_id}, expected_keys=["id", "title"])
+
+    run_test("get_post_by_id_include_all_fields", "get_post_by_id", {"id": test_post_id, "include_all_fields": True})
     
     run_test("create_post_basic", "create_post", {
         "title": f"Test Post {rid}",
@@ -203,10 +211,17 @@ def test_posts():
         "slug": f"test-post-{rid}",
         "comment_status": "closed",
         "ping_status": "closed"
-    })
+    }, expected_keys=["id"])
+    
+    # Track created post IDs for cleanup
+    created_post_ids = [test_post_id]
+    
+    # Get the ID from create_post_basic test result - extract from rid in title
+    # The tests create posts but we need to track their IDs for cleanup
+    # Instead, search for posts with our rid and delete them all
     
     run_test("update_post_partial", "update_post", {
-        "id": 1,
+        "id": test_post_id,
         "title": f"Updated Title {rid}"
     }, expected_keys=["id"])
     
@@ -223,6 +238,18 @@ def test_posts():
     else:
         print(f"  [FAIL] delete_post_by_id_trash: Could not create post to delete: {create_result.get('error', 'unknown')}")
         fail_count += 1
+    
+    # Cleanup all posts with this rid (check all statuses)
+    from toon_mcp import toon_to_json
+    for status in ['publish', 'draft', 'trash']:
+        result = call_tool("get_all_posts", {"per_page": 100, "status": status})
+        items = result.get("items", result)
+        if isinstance(items, str):
+            items = toon_to_json(items)
+        for item in items:
+            title = item.get("title", {}).get("rendered", "")
+            if rid in title:
+                call_tool("delete_post_by_id", {"id": item["id"], "force": True})
 
 
 # =============================================================================
@@ -244,9 +271,17 @@ def test_pages():
     
     run_test("get_all_pages_filter_by_parent", "get_all_pages", {"parent": 0, "per_page": 5})
     
-    run_test("get_page_by_id_basic", "get_page_by_id", {"id": 2}, expected_keys=["id", "title"])
+    # Create a test page to use for by_id tests
+    test_page_result = call_tool("create_page", {
+        "title": f"Test Page for ID tests {rid}",
+        "content": "Content for ID testing",
+        "status": "publish"
+    })
+    test_page_id = test_page_result.get("id", 2)
     
-    run_test("get_page_by_id_include_all_fields", "get_page_by_id", {"id": 2, "include_all_fields": True})
+    run_test("get_page_by_id_basic", "get_page_by_id", {"id": test_page_id}, expected_keys=["id", "title"])
+    
+    run_test("get_page_by_id_include_all_fields", "get_page_by_id", {"id": test_page_id, "include_all_fields": True})
     
     run_test("create_page_basic", "create_page", {
         "title": f"Test Page {rid}",
@@ -263,7 +298,7 @@ def test_pages():
     })
     
     run_test("update_page_partial", "update_page", {
-        "id": 2,
+        "id": test_page_id,
         "title": f"Updated Page Title {rid}"
     }, expected_keys=["id"])
     
@@ -280,6 +315,18 @@ def test_pages():
     else:
         print(f"  [FAIL] delete_page_by_id_trash: Could not create page to delete: {create_result.get('error', 'unknown')}")
         fail_count += 1
+    
+    # Cleanup all pages with this rid (check all statuses)
+    from toon_mcp import toon_to_json
+    for status in ['publish', 'draft', 'trash']:
+        result = call_tool("get_all_pages", {"per_page": 100, "status": status})
+        items = result.get("items", result)
+        if isinstance(items, str):
+            items = toon_to_json(items)
+        for item in items:
+            title = item.get("title", {}).get("rendered", "")
+            if rid in title:
+                call_tool("delete_page_by_id", {"id": item["id"], "force": True})
 
 
 # =============================================================================
@@ -334,6 +381,17 @@ def test_categories():
     else:
         print(f"  [FAIL] delete_category_by_id_trash: Could not create category to delete: {create_result.get('error', 'unknown')}")
         fail_count += 1
+    
+    # Cleanup all categories with this rid
+    from toon_mcp import toon_to_json
+    result = call_tool("get_all_categories", {"per_page": 100})
+    items = result.get("items", result)
+    if isinstance(items, str):
+        items = toon_to_json(items)
+    for item in items:
+        name = item.get("name", "")
+        if rid in name:
+            call_tool("delete_category_by_id", {"id": item["id"]})
 
 
 # =============================================================================
@@ -384,6 +442,17 @@ def test_tags():
     else:
         print(f"  [FAIL] test_tags: Could not create tag: {create_tag_result.get('error', 'unknown')}")
         fail_count += 6
+    
+    # Cleanup all tags with this rid
+    from toon_mcp import toon_to_json
+    result = call_tool("get_all_tags", {"per_page": 100})
+    items = result.get("items", result)
+    if isinstance(items, str):
+        items = toon_to_json(items)
+    for item in items:
+        name = item.get("name", "")
+        if rid in name:
+            call_tool("delete_tag_by_id", {"id": item["id"]})
 
 
 # =============================================================================
@@ -403,30 +472,31 @@ def test_comments():
         "TOON compression verified"
     ))
     
-    run_test("get_all_comments_filter_by_post", "get_all_comments", {"post": 1, "per_page": 5})
-    
-    run_test("get_all_comments_filter_by_status", "get_all_comments", {"status": "approved", "per_page": 5})
-    
-    run_test("get_comment_by_id_basic", "get_comment_by_id", {"id": 1}, expected_keys=["id", "content"])
-    
-    run_test("get_comment_by_id_include_all_fields", "get_comment_by_id", {"id": 1, "include_all_fields": True})
-    
     global pass_count, fail_count
     post_result = call_tool("create_post", {"title": f"Post for comment testing {rid}", "content": "Comments enabled post", "status": "publish", "comment_status": "open"})
     if "id" not in post_result:
         print(f"  [FAIL] test_comments: Could not create post for comments: {post_result.get('error', 'unknown')}")
-        fail_count += 6
+        fail_count += 10
         return
     
     post_id = post_result["id"]
     
+    run_test("get_all_comments_filter_by_post", "get_all_comments", {"post": post_id, "per_page": 5})
+    
+    run_test("get_all_comments_filter_by_status", "get_all_comments", {"status": "approved", "per_page": 5})
+    
     comment_result = call_tool("create_comment", {"post": post_id, "content": f"This is a test comment {rid}", "status": "approve"})
     if "id" not in comment_result:
         print(f"  [FAIL] create_comment_basic: Could not create comment: {comment_result.get('error', 'unknown')}")
-        fail_count += 5
+        fail_count += 9
         return
     
     comment_id = comment_result["id"]
+    
+    run_test("get_comment_by_id_basic", "get_comment_by_id", {"id": comment_id}, expected_keys=["id", "content"])
+    
+    run_test("get_comment_by_id_include_all_fields", "get_comment_by_id", {"id": comment_id, "include_all_fields": True})
+    
     run_test("create_comment_basic", "create_comment", {
         "post": post_id,
         "content": f"This is a test comment 2 {rid}",
@@ -452,6 +522,20 @@ def test_comments():
     else:
         print(f"  [FAIL] delete_comment_by_id_trash: Missing expected keys: ['deleted']")
         fail_count += 1
+    
+    # Cleanup all comments with this rid
+    from toon_mcp import toon_to_json
+    result = call_tool("get_all_comments", {"per_page": 100})
+    items = result.get("items", result)
+    if isinstance(items, str):
+        items = toon_to_json(items)
+    for item in items:
+        content = item.get("content", {}).get("rendered", "")
+        if rid in content:
+            call_tool("delete_comment_by_id", {"id": item["id"]})
+    
+    # Cleanup the post created for comment testing
+    call_tool("delete_post_by_id", {"id": post_id, "force": True})
 
 
 # =============================================================================
@@ -499,9 +583,16 @@ def test_navigation():
         "TOON compression verified"
     ))
     
-    run_test("get_navigation_by_id_basic", "get_navigation_by_id", {"id": 4}, expected_keys=["id", "title"])
+    # Create navigation for by_id tests
+    test_nav_result = call_tool("create_navigation", {
+        "title": f"Test Navigation for ID tests {rid}",
+        "status": "publish"
+    })
+    test_nav_id = test_nav_result.get("id")
     
-    run_test("get_navigation_by_id_include_all_fields", "get_navigation_by_id", {"id": 4, "include_all_fields": True})
+    run_test("get_navigation_by_id_basic", "get_navigation_by_id", {"id": test_nav_id}, expected_keys=["id", "title"])
+    
+    run_test("get_navigation_by_id_include_all_fields", "get_navigation_by_id", {"id": test_nav_id, "include_all_fields": True})
     
     run_test("create_navigation_basic", "create_navigation", {
         "title": f"Test Navigation {rid}",
@@ -515,11 +606,20 @@ def test_navigation():
     })
     
     run_test("update_navigation_partial", "update_navigation", {
-        "id": 4,
+        "id": test_nav_id,
         "status": "publish"
     }, expected_keys=["id"])
     
-    run_test("delete_navigation_by_id_trash", "delete_navigation_by_id", {"id": 4}, expected_keys=["deleted"])
+    # Cleanup all navigation with this rid
+    from toon_mcp import toon_to_json
+    result = call_tool("get_all_navigation", {"per_page": 100})
+    items = result.get("items", result)
+    if isinstance(items, str):
+        items = toon_to_json(items)
+    for item in items:
+        title = item.get("title", {}).get("raw", item.get("title", {}).get("rendered", ""))
+        if rid in title:
+            call_tool("delete_navigation_by_id", {"id": item["id"]})
 
 
 # =============================================================================
@@ -576,6 +676,22 @@ def test_blocks():
     else:
         print(f"  [FAIL] test_blocks: Could not create block: {create_block_result.get('error', 'unknown')}")
         fail_count += 8
+    
+    # Cleanup all blocks with this rid (check all statuses)
+    from toon_mcp import toon_to_json
+    for status in ['publish', 'draft', 'trash']:
+        result = call_tool("get_all_blocks", {"per_page": 100, "status": status})
+        items = result.get("items", result)
+        if isinstance(items, str):
+            items = toon_to_json(items)
+        for item in items:
+            block_id = item["id"]
+            # Get full block to check title
+            block_detail = call_tool("get_block_by_id", {"id": block_id, "include_all_fields": True})
+            if "error" not in block_detail:
+                title = block_detail.get("title", {}).get("raw", "")
+                if rid in title:
+                    call_tool("delete_block_by_id", {"id": block_id})
 
 
 # =============================================================================
@@ -618,6 +734,10 @@ def test_meta_tools():
 def test_toon_verification():
     print("\n# TOON Compression Verification Tests")
     print("-" * 40)
+    
+    # Create a post to test single record GET (ID 1 may not exist after cleanup)
+    create_result = call_tool("create_post", {"title": "TOON Test Post", "content": "Test content", "status": "publish"})
+    test_post_id = create_result.get("id", 1)
     
     run_test("toon_verify_posts_list", "get_all_posts", {"per_page": 3}, check_fn=lambda r: (
         "items" in r and isinstance(toon_to_json(r["items"]), list),
@@ -664,10 +784,13 @@ def test_toon_verification():
         "Search returns results array"
     ))
     
-    run_test("toon_not_on_single_record", "get_post_by_id", {"id": 1}, check_fn=lambda r: (
+    run_test("toon_not_on_single_record", "get_post_by_id", {"id": test_post_id}, check_fn=lambda r: (
         "id" in r and "title" in r,
         "Single record GET returns direct object"
     ))
+    
+    # Cleanup the test post
+    call_tool("delete_post_by_id", {"id": test_post_id, "force": True})
 
 
 # =============================================================================
@@ -724,16 +847,17 @@ def test_leak_detection():
     print("\n# Leak Detection Tests")
     print("-" * 40)
     
-    leak_found = False
-    leaked_resources = []
-    cleaned_resources = []
+    total_leaks = 0
+    cleaned_ids = set()
     
     resource_types = [
         ("posts", "get_all_posts", {"per_page": 100}, ["title", "id"]),
+        ("pages", "get_all_pages", {"per_page": 100}, ["title", "id"]),
         ("categories", "get_all_categories", {"per_page": 100}, ["name", "id"]),
         ("tags", "get_all_tags", {"per_page": 100}, ["name", "id"]),
         ("comments", "get_all_comments", {"per_page": 100}, ["id"]),
         ("navigation", "get_all_navigation", {"per_page": 100}, ["id"]),
+        ("blocks", "get_all_blocks", {"per_page": 100}, ["title", "id"]),
     ]
     
     plural_to_singular = {
@@ -745,65 +869,62 @@ def test_leak_detection():
         "blocks": "block",
     }
     
-    for resource_type, tool_name, args, _ in resource_types:
-        result = call_tool(tool_name, args)
-        if "error" in result:
-            continue
-        
-        items_raw = result.get("items", [])
-        if not items_raw:
-            continue
-        
-        items = toon_to_json(items_raw) if isinstance(items_raw, str) else items_raw
-        if not items or not isinstance(items, list):
-            continue
-            
-        for item in items:
-            item_id = item.get("id")
-            item_title = item.get("title", item.get("name", ""))
-            item_raw = item_title.get("raw", item_title.get("rendered", "")) if isinstance(item_title, dict) else str(item_title)
-            
-            if rid in item_raw:
-                leaked_resources.append(f"{resource_type}/{item_id}: {item_raw[:50]}")
-                leak_found = True
-                
-                singular = plural_to_singular.get(resource_type, resource_type[:-1])
-                delete_tool = f"delete_{singular}_by_id"
-                delete_result = call_tool(delete_tool, {"id": item_id, "force": True})
-                if delete_result.get("deleted"):
-                    cleaned_resources.append(f"{singular} {item_id}")
-                    print(f"  [CLEANED] {singular} {item_id}: {item_raw[:50]}")
+    all_statuses = ["publish", "draft", "pending", "private", "trash"]
     
-    if leak_found:
-        if len(cleaned_resources) == len(leaked_resources):
-            pass_count += 1
-            print(f"  [PASS] {len(cleaned_resources)} leak(s) detected and cleaned")
-            results.append({
-                "name": "leak_detection",
-                "tool": "multiple",
-                "status": "PASS",
-                "message": f"{len(cleaned_resources)} leak(s) detected and cleaned"
-            })
-        else:
-            fail_count += 1
-            print(f"  [FAIL] {len(leaked_resources)} leak(s) detected, {len(cleaned_resources)} cleaned")
-            for r in leaked_resources:
-                print(f"    - {r}")
-            results.append({
-                "name": "leak_detection",
-                "tool": "multiple",
-                "status": "FAIL",
-                "message": f"{len(leaked_resources) - len(cleaned_resources)} leak(s) not cleaned"
-            })
-    else:
+    for resource_type, tool_name, args, _ in resource_types:
+        statuses_to_check = all_statuses if resource_type in ["posts", "pages", "blocks"] else [""]
+        
+        for status in statuses_to_check:
+            check_args = dict(args)
+            if status:
+                check_args["status"] = status
+            
+            result = call_tool(tool_name, check_args)
+            if "error" in result:
+                continue
+            
+            items_raw = result.get("items", [])
+            if not items_raw:
+                continue
+            
+            items = toon_to_json(items_raw) if isinstance(items_raw, str) else items_raw
+            if not items or not isinstance(items, list):
+                continue
+                
+            for item in items:
+                item_id = item.get("id")
+                
+                if item_id in cleaned_ids:
+                    continue
+                
+                item_raw = ""
+                
+                if resource_type == "blocks":
+                    single_result = call_tool(f"get_{resource_type[:-1]}_by_id", {"id": item_id, "include_all_fields": True})
+                    if "error" not in single_result:
+                        item_title = single_result.get("title", {})
+                        item_raw = item_title.get("raw", "") if isinstance(item_title, dict) else ""
+                else:
+                    item_title = item.get("title", item.get("name", ""))
+                    item_raw = item_title.get("raw", item_title.get("rendered", "")) if isinstance(item_title, dict) else str(item_title)
+                
+                if item_raw and rid in item_raw:
+                    total_leaks += 1
+                    fail_count += 1
+                    singular = plural_to_singular.get(resource_type, resource_type[:-1])
+                    delete_tool = f"delete_{singular}_by_id"
+                    delete_args = {"id": item_id, "force": True} if resource_type in ["posts", "pages"] else {"id": item_id}
+                    delete_result = call_tool(delete_tool, delete_args)
+                    deleted = delete_result.get("deleted", False)
+                    if deleted:
+                        cleaned_ids.add(item_id)
+                        print(f"  [LEAK FAIL] {singular} {item_id}: {item_raw[:50]} (cleaned)")
+                    else:
+                        print(f"  [LEAK FAIL] {singular} {item_id}: {item_raw[:50]} (delete failed)")
+    
+    if total_leaks == 0:
         pass_count += 1
         print(f"  [PASS] No leaks detected")
-        results.append({
-            "name": "leak_detection",
-            "tool": "multiple",
-            "status": "PASS",
-            "message": "No leaks detected"
-        })
 
 
 # =============================================================================
