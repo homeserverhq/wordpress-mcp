@@ -24,8 +24,8 @@ class AuthMiddleware:
         if scope["type"] == "http":
             headers = dict(scope.get("headers", []))
             auth_header = headers.get(b"authorization", b"").decode()
-            if auth_header.startswith("Basic "):
-                token = auth_header[6:]
+            if auth_header.startswith("Bearer "):
+                token = auth_header[7:]
                 _current_user_token.set(token)
         await self.app(scope, receive, send)
 

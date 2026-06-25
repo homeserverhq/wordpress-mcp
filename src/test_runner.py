@@ -65,7 +65,7 @@ def call_tool(tool_name: str, arguments: dict) -> Any:
         "id": rid
     }
     headers = {
-        "Authorization": f"Basic {API_KEY}",
+        "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream",
     }

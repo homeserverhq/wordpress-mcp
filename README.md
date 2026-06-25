@@ -7,9 +7,9 @@ with full CRUD, search, and relationship management.
 
 ## ✨ Features
 
-- **🔑 Identity Passthrough** — Extracts the `Authorization: Basic <base64>`
-  header from incoming HTTP requests and forwards it to the WordPress API
-  without server-side authentication.
+- **🔑 Identity Passthrough** — Extracts the `Authorization: Bearer <base64>`
+  header from incoming HTTP requests, converts it to Basic auth, and forwards
+  it to the WordPress API without server-side authentication.
 - **👥 Multi-Tenancy** — Uses Python `contextvars` to maintain thread-safe
   user identity isolation, ensuring all AI-driven actions are scoped to
   the authenticated user's permissions.
