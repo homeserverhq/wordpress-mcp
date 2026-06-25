@@ -54,7 +54,7 @@ Build and run the server using Docker:
 docker build -t wordpress-mcp:latest .
 docker run -d --name wordpress-mcp \
     -e WORDPRESS_BASE_URL="http://wordpress-web:80" \
-    -e WORDPRESS_PUBLIC_URL="https://example.com" \
+    -e WORDPRESS_PUBLIC_URL="https://wordpress.example.com" \
     -e MCP_SERVER_PORT=80 \
     wordpress-mcp:latest
 
