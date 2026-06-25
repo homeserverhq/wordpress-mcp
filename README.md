@@ -28,9 +28,9 @@ with full CRUD, search, and relationship management.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `WORDPRESS_BASE_URL` | Yes | Docker-internal URL of the WordPress server (e.g. `http://wordpress-web:80`). |
-| `WORDPRESS_PUBLIC_URL` | No | Public-facing URL to replace internal Docker URLs in responses. Defaults to `WORDPRESS_BASE_URL` if not set. |
 | `MCP_SERVER_PORT` | Yes | Port number the MCP server listens on |
 | `ALLOW_ALL_AGGREGATE` | No | When `true`, aggregate listing tools honor the `include_all_fields` parameter. When `false` (default), the parameter is silently forced to `False` for aggregate list operations. |
+| `WORDPRESS_PUBLIC_URL` | No | Public-facing URL to replace internal Docker URLs in responses. Defaults to `WORDPRESS_BASE_URL` if not set. |
 
 ## 📦 Installation & Local Development
 
