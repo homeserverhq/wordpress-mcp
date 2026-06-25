@@ -28,6 +28,7 @@ with full CRUD, search, and relationship management.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `WORDPRESS_BASE_URL` | Yes | Docker-internal URL of the WordPress server (e.g. `http://wordpress-web:80`). |
+| `WORDPRESS_PUBLIC_URL` | No | Public-facing URL to replace internal Docker URLs in responses. Defaults to `WORDPRESS_BASE_URL` if not set. |
 | `MCP_SERVER_PORT` | Yes | Port number the MCP server listens on |
 | `ALLOW_ALL_AGGREGATE` | No | When `true`, aggregate listing tools honor the `include_all_fields` parameter. When `false` (default), the parameter is silently forced to `False` for aggregate list operations. |
 
@@ -53,6 +54,7 @@ Build and run the server using Docker:
 docker build -t wordpress-mcp:latest .
 docker run -d --name wordpress-mcp \
     -e WORDPRESS_BASE_URL="http://wordpress-web:80" \
+    -e WORDPRESS_PUBLIC_URL="https://example.com" \
     -e MCP_SERVER_PORT=80 \
     wordpress-mcp:latest
 
@@ -71,6 +73,9 @@ The MCP server serves at `http://wordpress-mcp:80/mcp` (Streamable HTTP).
 - **📝 Required Fields & Defaults** — Each `create_*` tool requires specific
   key fields. All other fields default to empty strings or reasonable values.
   The author/owner field is automatically set to the authenticated user for most resources.
+- **🔗 URL Replacement** — Internal Docker URLs (e.g., `http://wordpress-web:80`) are
+  automatically replaced with `WORDPRESS_PUBLIC_URL` in all response fields (`link`, `url`,
+  `guid`, etc.) to ensure clients receive usable public URLs.
 
 ## 🛠️ API Tool Mapping
 

@@ -2,13 +2,14 @@ import os
 import datetime as dt
 import re
 from typing import Any, Optional
+from urllib.parse import urlparse
 
 import httpx
 
 
 COMMON_FIELDS = {
-    "post": {"id", "title", "status", "author", "categories", "tags"},
-    "page": {"id", "title", "status", "author", "parent"},
+    "post": {"id", "title", "status", "author", "categories", "tags", "link"},
+    "page": {"id", "title", "status", "author", "parent", "link"},
     "category": {"id", "name", "slug", "parent", "count"},
     "tag": {"id", "name", "slug", "count"},
     "comment": {"id", "post", "author_name", "status", "parent", "content"},
@@ -55,6 +56,8 @@ class WordPressClient:
                 "WordPress URL required. Set WORDPRESS_BASE_URL env var "
                 "or pass base_url."
             )
+        self.public_url = os.getenv("WORDPRESS_PUBLIC_URL", "").rstrip("/") or self.base_url
+        self.public_hostname = urlparse(self.public_url).netloc or urlparse(self.public_url).hostname or self.public_url
 
     def _get_headers(self, api_key: Optional[str] = None) -> dict[str, str]:
         headers = {
@@ -69,6 +72,16 @@ class WordPressClient:
             k: _normalize_datetime(v) if isinstance(v, str) else v
             for k, v in payload.items()
         }
+
+    def _replace_base_urls(self, data: Any) -> Any:
+        """Replace internal hostname with public hostname in all URL strings."""
+        if isinstance(data, dict):
+            return {k: self._replace_base_urls(v) for k, v in data.items()}
+        if isinstance(data, list):
+            return [self._replace_base_urls(item) for item in data]
+        if isinstance(data, str) and "://" in data:
+            return re.sub(r'://[^/]+', f'://{self.public_hostname}', data)
+        return data
 
     async def request(
         self,
@@ -140,7 +153,7 @@ class WordPressClient:
         data = await self.get("/wp/v2/posts", api_key, params=params or None)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["post"])
-        return data
+        return self._replace_base_urls(data)
 
     async def get_post_by_id(
         self,
@@ -151,7 +164,7 @@ class WordPressClient:
         data = await self.get(f"/wp/v2/posts/{post_id}", api_key)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["post"])
-        return data
+        return self._replace_base_urls(data)
 
     async def create_post(
         self,
@@ -163,7 +176,7 @@ class WordPressClient:
         data = await self.post("/wp/v2/posts", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["post"])
-        return data
+        return self._replace_base_urls(data)
 
     async def update_post(
         self,
@@ -176,7 +189,7 @@ class WordPressClient:
         data = await self.put(f"/wp/v2/posts/{post_id}", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["post"])
-        return data
+        return self._replace_base_urls(data)
 
     async def delete_post_by_id(
         self,
@@ -216,7 +229,7 @@ class WordPressClient:
         data = await self.get("/wp/v2/pages", api_key, params=params or None)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["page"])
-        return data
+        return self._replace_base_urls(data)
 
     async def get_page_by_id(
         self,
@@ -227,7 +240,7 @@ class WordPressClient:
         data = await self.get(f"/wp/v2/pages/{page_id}", api_key)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["page"])
-        return data
+        return self._replace_base_urls(data)
 
     async def create_page(
         self,
@@ -239,7 +252,7 @@ class WordPressClient:
         data = await self.post("/wp/v2/pages", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["page"])
-        return data
+        return self._replace_base_urls(data)
 
     async def update_page(
         self,
@@ -252,7 +265,7 @@ class WordPressClient:
         data = await self.put(f"/wp/v2/pages/{page_id}", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["page"])
-        return data
+        return self._replace_base_urls(data)
 
     async def delete_page_by_id(
         self,
@@ -286,7 +299,7 @@ class WordPressClient:
         data = await self.get("/wp/v2/categories", api_key, params=params or None)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["category"])
-        return data
+        return self._replace_base_urls(data)
 
     async def get_category_by_id(
         self,
@@ -297,7 +310,7 @@ class WordPressClient:
         data = await self.get(f"/wp/v2/categories/{category_id}", api_key)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["category"])
-        return data
+        return self._replace_base_urls(data)
 
     async def create_category(
         self,
@@ -309,7 +322,7 @@ class WordPressClient:
         data = await self.post("/wp/v2/categories", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["category"])
-        return data
+        return self._replace_base_urls(data)
 
     async def update_category(
         self,
@@ -322,7 +335,7 @@ class WordPressClient:
         data = await self.put(f"/wp/v2/categories/{category_id}", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["category"])
-        return data
+        return self._replace_base_urls(data)
 
     async def delete_category_by_id(
         self,
@@ -352,7 +365,7 @@ class WordPressClient:
         data = await self.get("/wp/v2/tags", api_key, params=params or None)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["tag"])
-        return data
+        return self._replace_base_urls(data)
 
     async def get_tag_by_id(
         self,
@@ -363,7 +376,7 @@ class WordPressClient:
         data = await self.get(f"/wp/v2/tags/{tag_id}", api_key)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["tag"])
-        return data
+        return self._replace_base_urls(data)
 
     async def create_tag(
         self,
@@ -375,7 +388,7 @@ class WordPressClient:
         data = await self.post("/wp/v2/tags", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["tag"])
-        return data
+        return self._replace_base_urls(data)
 
     async def update_tag(
         self,
@@ -388,7 +401,7 @@ class WordPressClient:
         data = await self.put(f"/wp/v2/tags/{tag_id}", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["tag"])
-        return data
+        return self._replace_base_urls(data)
 
     async def delete_tag_by_id(
         self,
@@ -428,7 +441,7 @@ class WordPressClient:
         data = await self.get("/wp/v2/comments", api_key, params=params or None)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["comment"])
-        return data
+        return self._replace_base_urls(data)
 
     async def get_comment_by_id(
         self,
@@ -439,7 +452,7 @@ class WordPressClient:
         data = await self.get(f"/wp/v2/comments/{comment_id}", api_key)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["comment"])
-        return data
+        return self._replace_base_urls(data)
 
     async def create_comment(
         self,
@@ -451,7 +464,7 @@ class WordPressClient:
         data = await self.post("/wp/v2/comments", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["comment"])
-        return data
+        return self._replace_base_urls(data)
 
     async def update_comment(
         self,
@@ -464,7 +477,7 @@ class WordPressClient:
         data = await self.put(f"/wp/v2/comments/{comment_id}", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["comment"])
-        return data
+        return self._replace_base_urls(data)
 
     async def delete_comment_by_id(
         self,
@@ -497,7 +510,7 @@ class WordPressClient:
         data = await self.get("/wp/v2/users", api_key, params=params or None)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["user"])
-        return data
+        return self._replace_base_urls(data)
 
     async def get_user_by_id(
         self,
@@ -508,7 +521,7 @@ class WordPressClient:
         data = await self.get(f"/wp/v2/users/{user_id}", api_key)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["user"])
-        return data
+        return self._replace_base_urls(data)
 
     async def get_current_user(
         self,
@@ -518,7 +531,7 @@ class WordPressClient:
         data = await self.get("/wp/v2/users/me", api_key)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["user"])
-        return data
+        return self._replace_base_urls(data)
 
     # =========================================================================
     # Navigation
@@ -538,7 +551,7 @@ class WordPressClient:
         data = await self.get("/wp/v2/navigation", api_key, params=params or None)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["navigation"])
-        return data
+        return self._replace_base_urls(data)
 
     async def get_navigation_by_id(
         self,
@@ -549,7 +562,7 @@ class WordPressClient:
         data = await self.get(f"/wp/v2/navigation/{navigation_id}", api_key)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["navigation"])
-        return data
+        return self._replace_base_urls(data)
 
     async def create_navigation(
         self,
@@ -561,7 +574,7 @@ class WordPressClient:
         data = await self.post("/wp/v2/navigation", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["navigation"])
-        return data
+        return self._replace_base_urls(data)
 
     async def update_navigation(
         self,
@@ -574,7 +587,7 @@ class WordPressClient:
         data = await self.put(f"/wp/v2/navigation/{navigation_id}", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["navigation"])
-        return data
+        return self._replace_base_urls(data)
 
     async def delete_navigation_by_id(
         self,
@@ -605,7 +618,7 @@ class WordPressClient:
         data = await self.get("/wp/v2/blocks", api_key, params=params or None)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["block"])
-        return data
+        return self._replace_base_urls(data)
 
     async def get_block_by_id(
         self,
@@ -616,7 +629,7 @@ class WordPressClient:
         data = await self.get(f"/wp/v2/blocks/{block_id}", api_key)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["block"])
-        return data
+        return self._replace_base_urls(data)
 
     async def create_block(
         self,
@@ -628,7 +641,7 @@ class WordPressClient:
         data = await self.post("/wp/v2/blocks", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["block"])
-        return data
+        return self._replace_base_urls(data)
 
     async def update_block(
         self,
@@ -641,7 +654,7 @@ class WordPressClient:
         data = await self.put(f"/wp/v2/blocks/{block_id}", api_key, json=normalized)
         if not include_all_fields:
             data = _filter_fields(data, COMMON_FIELDS["block"])
-        return data
+        return self._replace_base_urls(data)
 
     async def delete_block_by_id(
         self,
@@ -659,40 +672,46 @@ class WordPressClient:
         self,
         api_key: Optional[str] = None,
     ) -> Any:
-        return await self.get("/wp/v2/taxonomies", api_key)
+        data = await self.get("/wp/v2/taxonomies", api_key)
+        return self._replace_base_urls(data)
 
     async def get_taxonomy_by_name(
         self,
         taxonomy: str,
         api_key: Optional[str] = None,
     ) -> Any:
-        return await self.get(f"/wp/v2/taxonomies/{taxonomy}", api_key)
+        data = await self.get(f"/wp/v2/taxonomies/{taxonomy}", api_key)
+        return self._replace_base_urls(data)
 
     async def get_post_types(
         self,
         api_key: Optional[str] = None,
     ) -> Any:
-        return await self.get("/wp/v2/types", api_key)
+        data = await self.get("/wp/v2/types", api_key)
+        return self._replace_base_urls(data)
 
     async def get_post_type_by_name(
         self,
         post_type: str,
         api_key: Optional[str] = None,
     ) -> Any:
-        return await self.get(f"/wp/v2/types/{post_type}", api_key)
+        data = await self.get(f"/wp/v2/types/{post_type}", api_key)
+        return self._replace_base_urls(data)
 
     async def get_post_statuses(
         self,
         api_key: Optional[str] = None,
     ) -> Any:
-        return await self.get("/wp/v2/statuses", api_key)
+        data = await self.get("/wp/v2/statuses", api_key)
+        return self._replace_base_urls(data)
 
     async def get_post_status_by_slug(
         self,
         status: str,
         api_key: Optional[str] = None,
     ) -> Any:
-        return await self.get(f"/wp/v2/statuses/{status}", api_key)
+        data = await self.get(f"/wp/v2/statuses/{status}", api_key)
+        return self._replace_base_urls(data)
 
     async def search_content(
         self,
@@ -703,10 +722,12 @@ class WordPressClient:
         page: int = 1,
     ) -> Any:
         params = {"search": query, "type": search_type, "per_page": per_page, "page": page}
-        return await self.get("/wp/v2/search", api_key, params=params)
+        data = await self.get("/wp/v2/search", api_key, params=params)
+        return self._replace_base_urls(data)
 
     async def get_server_status(
         self,
         api_key: Optional[str] = None,
     ) -> Any:
-        return await self.get("/wp/v2", api_key)
+        data = await self.get("/wp/v2", api_key)
+        return self._replace_base_urls(data)
