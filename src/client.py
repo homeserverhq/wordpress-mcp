@@ -6,6 +6,28 @@ from typing import Any, Optional
 import httpx
 
 
+COMMON_FIELDS = {
+    "post": {"id", "title", "status", "author", "categories", "tags"},
+    "page": {"id", "title", "status", "author", "parent"},
+    "category": {"id", "name", "slug", "parent", "count"},
+    "tag": {"id", "name", "slug", "count"},
+    "comment": {"id", "post", "author_name", "status", "parent", "content"},
+    "user": {"id", "name", "slug", "link"},
+    "navigation": {"id", "title", "status", "slug"},
+    "block": {"id", "title", "status", "slug"},
+    "search": {"id", "title", "url", "type", "subtype"},
+}
+
+
+def _filter_fields(data: Any, common_set: set[str]) -> Any:
+    """Filter dict or list of dicts to only include common fields."""
+    if isinstance(data, dict):
+        return {k: v for k, v in data.items() if k in common_set}
+    if isinstance(data, list):
+        return [_filter_fields(item, common_set) for item in data]
+    return data
+
+
 def _normalize_datetime(value: str) -> str:
     if re.match(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$', value):
         parsed = dt.datetime.fromisoformat(value)
@@ -115,11 +137,10 @@ class WordPressClient:
             params["search"] = search
         if author:
             params["author"] = author
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get("/wp/v2/posts", api_key, params=params or None)
+        data = await self.get("/wp/v2/posts", api_key, params=params or None)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["post"])
+        return data
 
     async def get_post_by_id(
         self,
@@ -127,29 +148,35 @@ class WordPressClient:
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
     ) -> Any:
-        params = {}
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get(f"/wp/v2/posts/{post_id}", api_key, params=params or None)
+        data = await self.get(f"/wp/v2/posts/{post_id}", api_key)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["post"])
+        return data
 
     async def create_post(
         self,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.post("/wp/v2/posts", api_key, json=normalized)
+        data = await self.post("/wp/v2/posts", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["post"])
+        return data
 
     async def update_post(
         self,
         post_id: int,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.put(f"/wp/v2/posts/{post_id}", api_key, json=normalized)
+        data = await self.put(f"/wp/v2/posts/{post_id}", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["post"])
+        return data
 
     async def delete_post_by_id(
         self,
@@ -186,11 +213,10 @@ class WordPressClient:
             params["author"] = author
         if parent:
             params["parent"] = parent
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get("/wp/v2/pages", api_key, params=params or None)
+        data = await self.get("/wp/v2/pages", api_key, params=params or None)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["page"])
+        return data
 
     async def get_page_by_id(
         self,
@@ -198,29 +224,35 @@ class WordPressClient:
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
     ) -> Any:
-        params = {}
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get(f"/wp/v2/pages/{page_id}", api_key, params=params or None)
+        data = await self.get(f"/wp/v2/pages/{page_id}", api_key)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["page"])
+        return data
 
     async def create_page(
         self,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.post("/wp/v2/pages", api_key, json=normalized)
+        data = await self.post("/wp/v2/pages", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["page"])
+        return data
 
     async def update_page(
         self,
         page_id: int,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.put(f"/wp/v2/pages/{page_id}", api_key, json=normalized)
+        data = await self.put(f"/wp/v2/pages/{page_id}", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["page"])
+        return data
 
     async def delete_page_by_id(
         self,
@@ -251,11 +283,10 @@ class WordPressClient:
             params["search"] = search
         if parent:
             params["parent"] = parent
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get("/wp/v2/categories", api_key, params=params or None)
+        data = await self.get("/wp/v2/categories", api_key, params=params or None)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["category"])
+        return data
 
     async def get_category_by_id(
         self,
@@ -263,29 +294,35 @@ class WordPressClient:
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
     ) -> Any:
-        params = {}
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get(f"/wp/v2/categories/{category_id}", api_key, params=params or None)
+        data = await self.get(f"/wp/v2/categories/{category_id}", api_key)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["category"])
+        return data
 
     async def create_category(
         self,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.post("/wp/v2/categories", api_key, json=normalized)
+        data = await self.post("/wp/v2/categories", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["category"])
+        return data
 
     async def update_category(
         self,
         category_id: int,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.put(f"/wp/v2/categories/{category_id}", api_key, json=normalized)
+        data = await self.put(f"/wp/v2/categories/{category_id}", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["category"])
+        return data
 
     async def delete_category_by_id(
         self,
@@ -312,11 +349,10 @@ class WordPressClient:
         params = {"per_page": per_page, "page": page, "orderby": orderby, "order": order}
         if search:
             params["search"] = search
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get("/wp/v2/tags", api_key, params=params or None)
+        data = await self.get("/wp/v2/tags", api_key, params=params or None)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["tag"])
+        return data
 
     async def get_tag_by_id(
         self,
@@ -324,29 +360,35 @@ class WordPressClient:
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
     ) -> Any:
-        params = {}
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get(f"/wp/v2/tags/{tag_id}", api_key, params=params or None)
+        data = await self.get(f"/wp/v2/tags/{tag_id}", api_key)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["tag"])
+        return data
 
     async def create_tag(
         self,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.post("/wp/v2/tags", api_key, json=normalized)
+        data = await self.post("/wp/v2/tags", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["tag"])
+        return data
 
     async def update_tag(
         self,
         tag_id: int,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.put(f"/wp/v2/tags/{tag_id}", api_key, json=normalized)
+        data = await self.put(f"/wp/v2/tags/{tag_id}", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["tag"])
+        return data
 
     async def delete_tag_by_id(
         self,
@@ -383,11 +425,10 @@ class WordPressClient:
             params["parent"] = parent
         if author:
             params["author"] = author
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get("/wp/v2/comments", api_key, params=params or None)
+        data = await self.get("/wp/v2/comments", api_key, params=params or None)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["comment"])
+        return data
 
     async def get_comment_by_id(
         self,
@@ -395,29 +436,35 @@ class WordPressClient:
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
     ) -> Any:
-        params = {}
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get(f"/wp/v2/comments/{comment_id}", api_key, params=params or None)
+        data = await self.get(f"/wp/v2/comments/{comment_id}", api_key)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["comment"])
+        return data
 
     async def create_comment(
         self,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.post("/wp/v2/comments", api_key, json=normalized)
+        data = await self.post("/wp/v2/comments", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["comment"])
+        return data
 
     async def update_comment(
         self,
         comment_id: int,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.put(f"/wp/v2/comments/{comment_id}", api_key, json=normalized)
+        data = await self.put(f"/wp/v2/comments/{comment_id}", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["comment"])
+        return data
 
     async def delete_comment_by_id(
         self,
@@ -447,11 +494,10 @@ class WordPressClient:
             params["search"] = search
         if roles:
             params["roles"] = roles
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get("/wp/v2/users", api_key, params=params or None)
+        data = await self.get("/wp/v2/users", api_key, params=params or None)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["user"])
+        return data
 
     async def get_user_by_id(
         self,
@@ -459,24 +505,20 @@ class WordPressClient:
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
     ) -> Any:
-        params = {}
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get(f"/wp/v2/users/{user_id}", api_key, params=params or None)
+        data = await self.get(f"/wp/v2/users/{user_id}", api_key)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["user"])
+        return data
 
     async def get_current_user(
         self,
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
     ) -> Any:
-        params = {}
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get("/wp/v2/users/me", api_key, params=params or None)
+        data = await self.get("/wp/v2/users/me", api_key)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["user"])
+        return data
 
     # =========================================================================
     # Navigation
@@ -493,11 +535,10 @@ class WordPressClient:
         params = {"per_page": per_page, "page": page}
         if search:
             params["search"] = search
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get("/wp/v2/navigation", api_key, params=params or None)
+        data = await self.get("/wp/v2/navigation", api_key, params=params or None)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["navigation"])
+        return data
 
     async def get_navigation_by_id(
         self,
@@ -505,29 +546,35 @@ class WordPressClient:
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
     ) -> Any:
-        params = {}
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get(f"/wp/v2/navigation/{navigation_id}", api_key, params=params or None)
+        data = await self.get(f"/wp/v2/navigation/{navigation_id}", api_key)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["navigation"])
+        return data
 
     async def create_navigation(
         self,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.post("/wp/v2/navigation", api_key, json=normalized)
+        data = await self.post("/wp/v2/navigation", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["navigation"])
+        return data
 
     async def update_navigation(
         self,
         navigation_id: int,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.put(f"/wp/v2/navigation/{navigation_id}", api_key, json=normalized)
+        data = await self.put(f"/wp/v2/navigation/{navigation_id}", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["navigation"])
+        return data
 
     async def delete_navigation_by_id(
         self,
@@ -555,11 +602,10 @@ class WordPressClient:
             params["status"] = status
         if search:
             params["search"] = search
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get("/wp/v2/blocks", api_key, params=params or None)
+        data = await self.get("/wp/v2/blocks", api_key, params=params or None)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["block"])
+        return data
 
     async def get_block_by_id(
         self,
@@ -567,29 +613,35 @@ class WordPressClient:
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
     ) -> Any:
-        params = {}
-        if include_all_fields:
-            params["context"] = "edit"
-        else:
-            params["context"] = "embed"
-        return await self.get(f"/wp/v2/blocks/{block_id}", api_key, params=params or None)
+        data = await self.get(f"/wp/v2/blocks/{block_id}", api_key)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["block"])
+        return data
 
     async def create_block(
         self,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.post("/wp/v2/blocks", api_key, json=normalized)
+        data = await self.post("/wp/v2/blocks", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["block"])
+        return data
 
     async def update_block(
         self,
         block_id: int,
         payload: dict[str, Any],
         api_key: Optional[str] = None,
+        include_all_fields: bool = False,
     ) -> Any:
         normalized = self._normalize_payload(payload)
-        return await self.put(f"/wp/v2/blocks/{block_id}", api_key, json=normalized)
+        data = await self.put(f"/wp/v2/blocks/{block_id}", api_key, json=normalized)
+        if not include_all_fields:
+            data = _filter_fields(data, COMMON_FIELDS["block"])
+        return data
 
     async def delete_block_by_id(
         self,

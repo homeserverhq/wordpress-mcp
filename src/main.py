@@ -297,7 +297,8 @@ async def create_post(
         format=format, password=password,
     )
     return await get_client().create_post(
-        params.model_dump(exclude_unset=True), get_user_token()
+        params.model_dump(exclude_unset=True), get_user_token(),
+        include_all_fields=ALLOW_ALL_AGGREGATE
     )
 
 
@@ -360,7 +361,7 @@ async def update_post(
         payload["format"] = format
     if password is not None:
         payload["password"] = password
-    return await get_client().update_post(id, payload, get_user_token())
+    return await get_client().update_post(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
 @mcp.tool()
@@ -486,7 +487,8 @@ async def create_page(
         template=template, password=password,
     )
     return await get_client().create_page(
-        params.model_dump(exclude_unset=True), get_user_token()
+        params.model_dump(exclude_unset=True), get_user_token(),
+        include_all_fields=ALLOW_ALL_AGGREGATE
     )
 
 
@@ -549,7 +551,7 @@ async def update_page(
         payload["template"] = template
     if password is not None:
         payload["password"] = password
-    return await get_client().update_page(id, payload, get_user_token())
+    return await get_client().update_page(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
 @mcp.tool()
@@ -649,7 +651,8 @@ async def create_category(
         name=name, slug=slug, description=description, parent=parent,
     )
     return await get_client().create_category(
-        params.model_dump(exclude_unset=True), get_user_token()
+        params.model_dump(exclude_unset=True), get_user_token(),
+        include_all_fields=ALLOW_ALL_AGGREGATE
     )
 
 
@@ -680,7 +683,7 @@ async def update_category(
         payload["description"] = description
     if parent is not None:
         payload["parent"] = parent
-    return await get_client().update_category(id, payload, get_user_token())
+    return await get_client().update_category(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
 @mcp.tool()
@@ -773,7 +776,8 @@ async def create_tag(
         name=name, slug=slug, description=description,
     )
     return await get_client().create_tag(
-        params.model_dump(exclude_unset=True), get_user_token()
+        params.model_dump(exclude_unset=True), get_user_token(),
+        include_all_fields=ALLOW_ALL_AGGREGATE
     )
 
 
@@ -800,7 +804,7 @@ async def update_tag(
         payload["slug"] = slug
     if description is not None:
         payload["description"] = description
-    return await get_client().update_tag(id, payload, get_user_token())
+    return await get_client().update_tag(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
 @mcp.tool()
@@ -906,7 +910,8 @@ async def create_comment(
         parent=parent, author_name=author_name, author_url=author_url,
     )
     return await get_client().create_comment(
-        params.model_dump(exclude_unset=True), get_user_token()
+        params.model_dump(exclude_unset=True), get_user_token(),
+        include_all_fields=ALLOW_ALL_AGGREGATE
     )
 
 
@@ -937,7 +942,7 @@ async def update_comment(
         payload["author_name"] = author_name
     if author_url is not None:
         payload["author_url"] = author_url
-    return await get_client().update_comment(id, payload, get_user_token())
+    return await get_client().update_comment(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
 @mcp.tool()
@@ -1104,7 +1109,8 @@ async def create_navigation(
         content=content, template=template,
     )
     return await get_client().create_navigation(
-        params.model_dump(exclude_unset=True), get_user_token()
+        params.model_dump(exclude_unset=True), get_user_token(),
+        include_all_fields=ALLOW_ALL_AGGREGATE
     )
 
 
@@ -1139,7 +1145,7 @@ async def update_navigation(
         payload["content"] = content
     if template is not None:
         payload["template"] = template
-    return await get_client().update_navigation(id, payload, get_user_token())
+    return await get_client().update_navigation(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
 @mcp.tool()
@@ -1234,7 +1240,8 @@ async def create_block(
         slug=slug, template=template,
     )
     return await get_client().create_block(
-        params.model_dump(exclude_unset=True), get_user_token()
+        params.model_dump(exclude_unset=True), get_user_token(),
+        include_all_fields=ALLOW_ALL_AGGREGATE,
     )
 
 
@@ -1269,7 +1276,9 @@ async def update_block(
         payload["slug"] = slug
     if template is not None:
         payload["template"] = template
-    return await get_client().update_block(id, payload, get_user_token())
+    return await get_client().update_block(
+        id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE,
+    )
 
 
 @mcp.tool()
