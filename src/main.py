@@ -14,6 +14,7 @@ _current_user_token: ContextVar[Optional[str]] = ContextVar(
 )
 
 ALLOW_ALL_AGGREGATE = os.getenv("ALLOW_ALL_AGGREGATE", "false").lower() in ("true", "1", "yes")
+IS_STATEFUL = os.getenv("IS_STATEFUL", "true").lower() in ("true", "1", "yes")
 
 # =============================================================================
 # Literal Type Aliases — closed sets for every enum-like parameter
@@ -1424,7 +1425,10 @@ def main():
     host = "0.0.0.0"
     port = int(port_env)
     path = "/mcp"
-    app = mcp.http_app(path=path)
+    if IS_STATEFUL:
+        app = mcp.http_app(path=path)
+    else:
+        app = mcp.http_app(path=path, stateless_http=True)
     app = AuthMiddleware(app)
     print(f"Starting WordPress MCP server on http://{host}:{port}{path}")
     import uvicorn

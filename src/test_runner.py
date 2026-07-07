@@ -71,7 +71,13 @@ def call_tool(tool_name: str, arguments: dict) -> Any:
         )
 
     resp.raise_for_status()
-    result = _parse_sse(resp.text)
+    content_type = resp.headers.get("content-type", "")
+    if "text/event-stream" in content_type:
+        result = _parse_sse(resp.text)
+    elif "application/json" in content_type:
+        result = resp.json()
+    else:
+        result = {}
     inner = result.get("result", result)
 
     content = inner.get("content", [])
