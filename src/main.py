@@ -1,7 +1,7 @@
 import os
 import sys
 from contextvars import ContextVar
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from fastmcp import FastMCP, Context
 from pydantic import BaseModel, Field
@@ -14,6 +14,21 @@ _current_user_token: ContextVar[Optional[str]] = ContextVar(
 )
 
 ALLOW_ALL_AGGREGATE = os.getenv("ALLOW_ALL_AGGREGATE", "false").lower() in ("true", "1", "yes")
+
+# =============================================================================
+# Literal Type Aliases — closed sets for every enum-like parameter
+# =============================================================================
+
+PostStatus = Literal["publish", "future", "draft", "pending", "private", "trash"]
+PostFormat = Literal["standard", "aside", "chat", "gallery", "link", "image", "quote", "status", "video", "audio"]
+OpenClosed = Literal["open", "closed"]
+CommentStatus = Literal["approve", "hold", "spam", "trash"]
+OrderDir = Literal["asc", "desc"]
+PostOrderby = Literal["author", "comment_count", "date", "id", "include", "menu_order", "modified", "parent", "relevance", "slug", "status", "title", "type", "rand"]
+TaxonomyOrderby = Literal["id", "include", "name", "slug", "term_group", "description", "count"]
+UserOrderby = Literal["id", "include", "name", "registered_date", "slug", "email", "url"]
+UserRole = Literal["administrator", "editor", "author", "contributor", "subscriber"]
+SearchType = Literal["post", "page", "post_tag", "category", "attachment", "wp_block", "wp_navigation"]
 
 
 class AuthMiddleware:
@@ -53,15 +68,15 @@ def get_user_token() -> Optional[str]:
 class CreatePostParam(BaseModel):
     title: str
     content: str
-    status: str
+    status: PostStatus
     slug: str = ""
     author: int = 0
     categories: list = []
     tags: list = []
     featured_media: int = 0
-    comment_status: str = "open"
-    ping_status: str = "open"
-    format: str = "standard"
+    comment_status: OpenClosed = "open"
+    ping_status: OpenClosed = "open"
+    format: PostFormat = "standard"
     password: str = ""
 
 
@@ -69,29 +84,29 @@ class UpdatePostParam(BaseModel):
     id: int
     title: Optional[str] = None
     content: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[PostStatus] = None
     slug: Optional[str] = None
     author: Optional[int] = None
     categories: Optional[list] = None
     tags: Optional[list] = None
     featured_media: Optional[int] = None
-    comment_status: Optional[str] = None
-    ping_status: Optional[str] = None
-    format: Optional[str] = None
+    comment_status: Optional[OpenClosed] = None
+    ping_status: Optional[OpenClosed] = None
+    format: Optional[PostFormat] = None
     password: Optional[str] = None
 
 
 class CreatePageParam(BaseModel):
     title: str
     content: str
-    status: str
+    status: PostStatus
     slug: str = ""
     parent: int = 0
     menu_order: int = 0
     author: int = 0
     featured_media: int = 0
-    comment_status: str = "closed"
-    ping_status: str = "open"
+    comment_status: OpenClosed = "closed"
+    ping_status: OpenClosed = "open"
     template: str = ""
     password: str = ""
 
@@ -100,14 +115,14 @@ class UpdatePageParam(BaseModel):
     id: int
     title: Optional[str] = None
     content: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[PostStatus] = None
     slug: Optional[str] = None
     parent: Optional[int] = None
     menu_order: Optional[int] = None
     author: Optional[int] = None
     featured_media: Optional[int] = None
-    comment_status: Optional[str] = None
-    ping_status: Optional[str] = None
+    comment_status: Optional[OpenClosed] = None
+    ping_status: Optional[OpenClosed] = None
     template: Optional[str] = None
     password: Optional[str] = None
 
@@ -143,7 +158,7 @@ class UpdateTagParam(BaseModel):
 class CreateCommentParam(BaseModel):
     post: int
     content: str
-    status: str
+    status: CommentStatus
     parent: int = 0
     author_name: str = ""
     author_url: str = ""
@@ -152,14 +167,14 @@ class CreateCommentParam(BaseModel):
 class UpdateCommentParam(BaseModel):
     id: int
     content: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[CommentStatus] = None
     author_name: Optional[str] = None
     author_url: Optional[str] = None
 
 
 class CreateNavigationParam(BaseModel):
     title: str
-    status: str
+    status: PostStatus
     slug: str = ""
     content: str = ""
     template: str = ""
@@ -168,7 +183,7 @@ class CreateNavigationParam(BaseModel):
 class UpdateNavigationParam(BaseModel):
     id: int
     title: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[PostStatus] = None
     slug: Optional[str] = None
     content: Optional[str] = None
     template: Optional[str] = None
@@ -177,7 +192,7 @@ class UpdateNavigationParam(BaseModel):
 class CreateBlockParam(BaseModel):
     title: str
     content: str
-    status: str
+    status: PostStatus
     slug: str = ""
     template: str = ""
 
@@ -186,7 +201,7 @@ class UpdateBlockParam(BaseModel):
     id: int
     title: Optional[str] = None
     content: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[PostStatus] = None
     slug: Optional[str] = None
     template: Optional[str] = None
 
@@ -203,21 +218,21 @@ async def list_all_posts(
     page: int = 1,
     search: str = "",
     author: str = "",
-    orderby: str = "date",
-    order: str = "desc",
+    orderby: PostOrderby = "date",
+    order: OrderDir = "desc",
     ctx: Context = None
 ) -> dict[str, Any]:
     """List all post records.
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        status: Filter by post status (publish, draft, private, etc.).
+        status: Filter by post status. Valid values: publish, future, draft, pending, private, trash. Pass empty string for no filter.
         per_page: Maximum number of posts to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
-        author: Filter by author user ID.
-        orderby: Sort field (date, modified, id, title, etc.). Defaults to "date".
-        order: Sort direction (asc or desc). Defaults to "desc".
+        author: Filter by author user ID(s). Single ID or comma-separated IDs as a string.
+        orderby: Sort field. Valid values: author, comment_count, date, id, include, menu_order, modified, parent, relevance, slug, status, title, type, rand. Defaults to "date".
+        order: Sort direction. Valid values: asc, desc. Defaults to "desc".
     """
     data = await get_client().list_all_posts(
         get_user_token(),
@@ -254,15 +269,15 @@ async def get_post_by_id(
 async def create_post(
     title: str,
     content: str,
-    status: str,
+    status: PostStatus,
     slug: str = "",
     author: int = 0,
     categories: list[int] = None,
     tags: list[int] = None,
     featured_media: int = 0,
-    comment_status: str = "open",
-    ping_status: str = "open",
-    format: str = "standard",
+    comment_status: OpenClosed = "open",
+    ping_status: OpenClosed = "open",
+    format: PostFormat = "standard",
     password: str = "",
     ctx: Context = None
 ) -> dict[str, Any]:
@@ -271,15 +286,15 @@ async def create_post(
     Args:
         title: Title of the new post.
         content: Content of the post.
-        status: Post status - publish, draft, private, etc..
+        status: Post status. Valid values: publish, future, draft, pending, private, trash.
         slug: URL-friendly slug. Defaults to empty.
         author: Author user ID. Defaults to 0.
         categories: List of category IDs. Defaults to empty list.
         tags: List of tag IDs. Defaults to empty list.
         featured_media: Featured image media ID. Defaults to 0.
-        comment_status: Whether comments are open (open or closed). Defaults to "open".
-        ping_status: Whether pings are open (open or closed). Defaults to "open".
-        format: Post format (standard, aside, chat, etc.). Defaults to "standard".
+        comment_status: Whether comments are open. Valid values: open, closed. Defaults to "open".
+        ping_status: Whether pings are open. Valid values: open, closed. Defaults to "open".
+        format: Post format. Valid values: standard, aside, chat, gallery, link, image, quote, status, video, audio. Defaults to "standard".
         password: Password protection. Defaults to empty.
     """
     if categories is None:
@@ -304,15 +319,15 @@ async def update_post(
     id: int,
     title: str = None,
     content: str = None,
-    status: str = None,
+    status: Optional[PostStatus] = None,
     slug: str = None,
     author: int = None,
     categories: list[int] = None,
     tags: list[int] = None,
     featured_media: int = None,
-    comment_status: str = None,
-    ping_status: str = None,
-    format: str = None,
+    comment_status: Optional[OpenClosed] = None,
+    ping_status: Optional[OpenClosed] = None,
+    format: Optional[PostFormat] = None,
     password: str = None,
     ctx: Context = None
 ) -> dict[str, Any]:
@@ -322,15 +337,15 @@ async def update_post(
         id: The unique ID of the post to update.
         title: New title for the post.
         content: New content for the post.
-        status: New status (publish, draft, private, etc.).
+        status: New post status. Valid values: publish, future, draft, pending, private, trash.
         slug: New URL-friendly slug.
         author: New author user ID.
         categories: New list of category IDs.
         tags: New list of tag IDs.
         featured_media: New featured image media ID.
-        comment_status: New comment status (open or closed).
-        ping_status: New ping status (open or closed).
-        format: New post format.
+        comment_status: New comment status. Valid values: open, closed.
+        ping_status: New ping status. Valid values: open, closed.
+        format: New post format. Valid values: standard, aside, chat, gallery, link, image, quote, status, video, audio.
         password: New password protection.
     """
     payload = {}
@@ -371,7 +386,7 @@ async def delete_post_by_id(
 
     Args:
         id: The unique ID of the post to delete.
-        force: When False (default), moves to trash. When True, permanently deletes.
+        force: When False (default), moves to trash (soft delete). When True, permanently deletes.
     """
     result = await get_client().delete_post_by_id(id, get_user_token(), force=force)
     if isinstance(result, dict) and result.get("code"):
@@ -392,22 +407,22 @@ async def list_all_pages(
     search: str = "",
     author: str = "",
     parent: int = 0,
-    orderby: str = "date",
-    order: str = "desc",
+    orderby: PostOrderby = "date",
+    order: OrderDir = "desc",
     ctx: Context = None
 ) -> dict[str, Any]:
     """List all page records.
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        status: Filter by page status.
+        status: Filter by page status. Valid values: publish, future, draft, pending, private, trash. Pass empty string for no filter.
         per_page: Maximum number of pages to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
-        author: Filter by author user ID.
-        parent: Filter by parent page ID.
-        orderby: Sort field. Defaults to "date".
-        order: Sort direction (asc or desc). Defaults to "desc".
+        author: Filter by author user ID(s). Single ID or comma-separated IDs as a string.
+        parent: Filter by parent page ID. 0 means no filter.
+        orderby: Sort field. Valid values: author, comment_count, date, id, include, menu_order, modified, parent, relevance, slug, status, title, type, rand. Defaults to "date".
+        order: Sort direction. Valid values: asc, desc. Defaults to "desc".
     """
     data = await get_client().list_all_pages(
         get_user_token(),
@@ -445,14 +460,14 @@ async def get_page_by_id(
 async def create_page(
     title: str,
     content: str,
-    status: str,
+    status: PostStatus,
     slug: str = "",
     parent: int = 0,
     menu_order: int = 0,
     author: int = 0,
     featured_media: int = 0,
-    comment_status: str = "closed",
-    ping_status: str = "open",
+    comment_status: OpenClosed = "closed",
+    ping_status: OpenClosed = "open",
     template: str = "",
     password: str = "",
     ctx: Context = None
@@ -462,15 +477,15 @@ async def create_page(
     Args:
         title: Title of the new page.
         content: Content of the page.
-        status: Page status - publish, draft, private, etc..
+        status: Page status. Valid values: publish, future, draft, pending, private, trash.
         slug: URL-friendly slug. Defaults to empty.
         parent: Parent page ID for hierarchical pages. Defaults to 0 (no parent).
         menu_order: Order for menu placement. Defaults to 0.
         author: Author user ID. Defaults to 0.
         featured_media: Featured image media ID. Defaults to 0.
-        comment_status: Whether comments are open. Defaults to "closed".
-        ping_status: Whether pings are open. Defaults to "open".
-        template: Template file name. Defaults to empty.
+        comment_status: Whether comments are open. Valid values: open, closed. Defaults to "closed".
+        ping_status: Whether pings are open. Valid values: open, closed. Defaults to "open".
+        template: Template file name. Empty string means default theme template.
         password: Password protection. Defaults to empty.
     """
     params = CreatePageParam(
@@ -491,14 +506,14 @@ async def update_page(
     id: int,
     title: str = None,
     content: str = None,
-    status: str = None,
+    status: Optional[PostStatus] = None,
     slug: str = None,
     parent: int = None,
     menu_order: int = None,
     author: int = None,
     featured_media: int = None,
-    comment_status: str = None,
-    ping_status: str = None,
+    comment_status: Optional[OpenClosed] = None,
+    ping_status: Optional[OpenClosed] = None,
     template: str = None,
     password: str = None,
     ctx: Context = None
@@ -509,15 +524,15 @@ async def update_page(
         id: The unique ID of the page to update.
         title: New title for the page.
         content: New content for the page.
-        status: New status.
+        status: New page status. Valid values: publish, future, draft, pending, private, trash.
         slug: New URL-friendly slug.
         parent: New parent page ID.
         menu_order: New menu order.
         author: New author user ID.
         featured_media: New featured image media ID.
-        comment_status: New comment status.
-        ping_status: New ping status.
-        template: New template file name.
+        comment_status: New comment status. Valid values: open, closed.
+        ping_status: New ping status. Valid values: open, closed.
+        template: New template file name. Empty string means default theme template.
         password: New password protection.
     """
     payload = {}
@@ -558,7 +573,7 @@ async def delete_page_by_id(
 
     Args:
         id: The unique ID of the page to delete.
-        force: When False (default), moves to trash. When True, permanently deletes.
+        force: When False (default), moves to trash (soft delete). When True, permanently deletes.
     """
     result = await get_client().delete_page_by_id(id, get_user_token(), force=force)
     if isinstance(result, dict) and result.get("code"):
@@ -577,8 +592,8 @@ async def list_all_categories(
     page: int = 1,
     search: str = "",
     parent: int = 0,
-    orderby: str = "name",
-    order: str = "asc",
+    orderby: TaxonomyOrderby = "name",
+    order: OrderDir = "asc",
     ctx: Context = None
 ) -> dict[str, Any]:
     """List all category records.
@@ -588,9 +603,9 @@ async def list_all_categories(
         per_page: Maximum number of categories to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
-        parent: Filter by parent category ID.
-        orderby: Sort field. Defaults to "name".
-        order: Sort direction (asc or desc). Defaults to "asc".
+        parent: Filter by parent category ID. 0 means no filter.
+        orderby: Sort field. Valid values: id, include, name, slug, term_group, description, count. Defaults to "name".
+        order: Sort direction. Valid values: asc, desc. Defaults to "asc".
     """
     data = await get_client().list_all_categories(
         get_user_token(),
@@ -636,7 +651,7 @@ async def create_category(
         name: Name of the new category.
         slug: URL-friendly slug.
         description: Category description. Defaults to empty.
-        parent: Parent category ID for hierarchical categories. Defaults to 0.
+        parent: Parent category ID for hierarchical categories. 0 means top-level category. Defaults to 0.
     """
     params = CreateCategoryParam(
         name=name, slug=slug, description=description, parent=parent,
@@ -663,7 +678,7 @@ async def update_category(
         name: New name for the category.
         slug: New URL-friendly slug.
         description: New description.
-        parent: New parent category ID.
+        parent: New parent category ID. 0 means top-level category.
     """
     payload = {}
     if name is not None:
@@ -682,7 +697,9 @@ async def delete_category_by_id(
     id: int,
     ctx: Context = None
 ) -> dict[str, Any]:
-    """Delete a category by its ID (permanently - categories don't support trash).
+    """Delete a category by its ID.
+
+    Note: Categories are deleted permanently — they don't support trash.
 
     Args:
         id: The unique ID of the category to delete.
@@ -703,8 +720,8 @@ async def list_all_tags(
     per_page: int = 10,
     page: int = 1,
     search: str = "",
-    orderby: str = "name",
-    order: str = "asc",
+    orderby: TaxonomyOrderby = "name",
+    order: OrderDir = "asc",
     ctx: Context = None
 ) -> dict[str, Any]:
     """List all tag records.
@@ -714,8 +731,8 @@ async def list_all_tags(
         per_page: Maximum number of tags to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
-        orderby: Sort field. Defaults to "name".
-        order: Sort direction (asc or desc). Defaults to "asc".
+        orderby: Sort field. Valid values: id, include, name, slug, term_group, description, count. Defaults to "name".
+        order: Sort direction. Valid values: asc, desc. Defaults to "asc".
     """
     data = await get_client().list_all_tags(
         get_user_token(),
@@ -800,7 +817,9 @@ async def delete_tag_by_id(
     id: int,
     ctx: Context = None
 ) -> dict[str, Any]:
-    """Delete a tag by its ID (permanently - tags don't support trash).
+    """Delete a tag by its ID.
+
+    Note: Tags are deleted permanently — they don't support trash.
 
     Args:
         id: The unique ID of the tag to delete.
@@ -831,13 +850,13 @@ async def list_all_comments(
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        status: Filter by comment status (approved, hold, spam, trash).
+        status: Filter by comment status. Valid values: approve, hold, spam, trash. Pass empty string for no filter.
         per_page: Maximum number of comments to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
         post: Filter by post ID.
         parent: Filter by parent comment ID.
-        author: Filter by author.
+        author: Filter by comment author user ID(s). Single ID or comma-separated IDs as a string.
     """
     data = await get_client().list_all_comments(
         get_user_token(),
@@ -874,7 +893,7 @@ async def get_comment_by_id(
 async def create_comment(
     post: int,
     content: str,
-    status: str,
+    status: CommentStatus,
     parent: int = 0,
     author_name: str = "",
     author_url: str = "",
@@ -885,8 +904,8 @@ async def create_comment(
     Args:
         post: The post ID to attach the comment to.
         content: Comment content text.
-        status: Comment status - approved, hold, spam, trash.
-        parent: Parent comment ID for threaded replies. Defaults to 0.
+        status: Comment status. Valid values: approve, hold, spam, trash.
+        parent: Parent comment ID for threaded replies. 0 means top-level comment. Defaults to 0.
         author_name: Name of the comment author. Defaults to empty.
         author_url: URL of the comment author. Defaults to empty.
     """
@@ -904,7 +923,7 @@ async def create_comment(
 async def update_comment(
     id: int,
     content: str = None,
-    status: str = None,
+    status: Optional[CommentStatus] = None,
     author_name: str = None,
     author_url: str = None,
     ctx: Context = None
@@ -914,7 +933,7 @@ async def update_comment(
     Args:
         id: The unique ID of the comment to update.
         content: New content for the comment.
-        status: New status (approved, hold, spam, trash).
+        status: New status. Valid values: approve, hold, spam, trash.
         author_name: New author name.
         author_url: New author URL.
     """
@@ -935,7 +954,9 @@ async def delete_comment_by_id(
     id: int,
     ctx: Context = None
 ) -> dict[str, Any]:
-    """Delete a comment by its ID (permanently).
+    """Delete a comment by its ID.
+
+    Note: Comments are deleted permanently — they don't support trash.
 
     Args:
         id: The unique ID of the comment to delete.
@@ -957,8 +978,8 @@ async def list_all_users(
     page: int = 1,
     search: str = "",
     roles: str = "",
-    orderby: str = "name",
-    order: str = "asc",
+    orderby: UserOrderby = "name",
+    order: OrderDir = "asc",
     ctx: Context = None
 ) -> dict[str, Any]:
     """List all user records.
@@ -968,9 +989,9 @@ async def list_all_users(
         per_page: Maximum number of users to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
-        roles: Filter by role.
-        orderby: Sort field. Defaults to "name".
-        order: Sort direction (asc or desc). Defaults to "asc".
+        roles: Filter by user role. Valid values: administrator, editor, author, contributor, subscriber. Pass empty string for no filter.
+        orderby: Sort field. Valid values: id, include, name, registered_date, slug, email, url. Defaults to "name".
+        order: Sort direction. Valid values: asc, desc. Defaults to "asc".
     """
     data = await get_client().list_all_users(
         get_user_token(),
@@ -1067,7 +1088,7 @@ async def get_navigation_by_id(
 @mcp.tool(tags={"write", "primary", "wordpress"})
 async def create_navigation(
     title: str,
-    status: str,
+    status: PostStatus,
     slug: str = "",
     content: str = "",
     template: str = "",
@@ -1077,10 +1098,10 @@ async def create_navigation(
 
     Args:
         title: Title of the new navigation menu.
-        status: Navigation status - publish, draft, etc..
+        status: Navigation menu status. Valid values: publish, future, draft, pending, private, trash.
         slug: URL-friendly slug. Defaults to empty.
         content: Navigation content (menu items). Defaults to empty.
-        template: Template file name. Defaults to empty.
+        template: Template file name. Empty string means default theme template. Defaults to empty.
     """
     params = CreateNavigationParam(
         title=title, status=status, slug=slug,
@@ -1096,7 +1117,7 @@ async def create_navigation(
 async def update_navigation(
     id: int,
     title: str = None,
-    status: str = None,
+    status: Optional[PostStatus] = None,
     slug: str = None,
     content: str = None,
     template: str = None,
@@ -1107,10 +1128,10 @@ async def update_navigation(
     Args:
         id: The unique ID of the navigation menu to update.
         title: New title.
-        status: New status.
+        status: New status. Valid values: publish, future, draft, pending, private, trash.
         slug: New URL-friendly slug.
         content: New navigation content.
-        template: New template file name.
+        template: New template file name. Empty string means default theme template.
     """
     payload = {}
     if title is not None:
@@ -1131,7 +1152,9 @@ async def delete_navigation_by_id(
     id: int,
     ctx: Context = None
 ) -> dict[str, Any]:
-    """Delete a navigation menu by its ID (permanently).
+    """Delete a navigation menu by its ID.
+
+    Note: Navigation menus are deleted permanently — they don't support trash.
 
     Args:
         id: The unique ID of the navigation menu to delete.
@@ -1159,7 +1182,7 @@ async def list_all_blocks(
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        status: Filter by block status.
+        status: Filter by block status. Valid values: publish, future, draft, pending, private, trash. Pass empty string for no filter.
         per_page: Maximum number of blocks to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
@@ -1196,7 +1219,7 @@ async def get_block_by_id(
 async def create_block(
     title: str,
     content: str,
-    status: str,
+    status: PostStatus,
     slug: str = "",
     template: str = "",
     ctx: Context = None
@@ -1206,9 +1229,9 @@ async def create_block(
     Args:
         title: Title of the new block.
         content: Block content.
-        status: Block status - publish, draft, etc..
+        status: Block status. Valid values: publish, future, draft, pending, private, trash.
         slug: URL-friendly slug. Defaults to empty.
-        template: Template file name. Defaults to empty.
+        template: Template file name. Empty string means default theme template. Defaults to empty.
     """
     params = CreateBlockParam(
         title=title, content=content, status=status,
@@ -1225,7 +1248,7 @@ async def update_block(
     id: int,
     title: str = None,
     content: str = None,
-    status: str = None,
+    status: Optional[PostStatus] = None,
     slug: str = None,
     template: str = None,
     ctx: Context = None
@@ -1236,9 +1259,9 @@ async def update_block(
         id: The unique ID of the block to update.
         title: New title.
         content: New block content.
-        status: New status.
+        status: New status. Valid values: publish, future, draft, pending, private, trash.
         slug: New URL-friendly slug.
-        template: New template file name.
+        template: New template file name. Empty string means default theme template.
     """
     payload = {}
     if title is not None:
@@ -1261,7 +1284,9 @@ async def delete_block_by_id(
     id: int,
     ctx: Context = None
 ) -> dict[str, Any]:
-    """Delete a block by its ID (permanently).
+    """Delete a block by its ID.
+
+    Note: Blocks are deleted permanently — they don't support trash.
 
     Args:
         id: The unique ID of the block to delete.
@@ -1280,7 +1305,7 @@ async def delete_block_by_id(
 async def list_all_taxonomies(
     ctx: Context = None
 ) -> dict[str, Any]:
-    """List all registered taxonomies (categories, tags, nav_menu, etc.)."""
+    """List all registered taxonomies (category, post_tag, nav_menu, wp_pattern, etc.)."""
     return await get_client().list_all_taxonomies(get_user_token())
 
 
@@ -1292,7 +1317,7 @@ async def get_taxonomy_by_name(
     """Get details of a specific taxonomy by its name.
 
     Args:
-        name: The taxonomy name (e.g., category, post_tag, nav_menu).
+        name: The taxonomy name. Common values: category, post_tag, nav_menu, wp_pattern.
     """
     return await get_client().get_taxonomy_by_name(name, get_user_token())
 
@@ -1301,7 +1326,7 @@ async def get_taxonomy_by_name(
 async def list_all_post_types(
     ctx: Context = None
 ) -> dict[str, Any]:
-    """List all registered post types (post, page, attachment, etc.)."""
+    """List all registered post types (post, page, attachment, wp_block, wp_navigation, etc.)."""
     return await get_client().list_all_post_types(get_user_token())
 
 
@@ -1313,7 +1338,7 @@ async def get_post_type_by_name(
     """Get details of a specific post type.
 
     Args:
-        type: The post type name (e.g., post, page, wp_block).
+        type: The post type name. Common values: post, page, attachment, wp_block, wp_navigation.
     """
     return await get_client().get_post_type_by_name(type, get_user_token())
 
@@ -1322,7 +1347,7 @@ async def get_post_type_by_name(
 async def list_all_post_statuses(
     ctx: Context = None
 ) -> dict[str, Any]:
-    """List all registered post statuses (publish, draft, private, etc.)."""
+    """List all registered post statuses (publish, future, draft, pending, private, trash, auto-draft, inherit)."""
     return await get_client().list_all_post_statuses(get_user_token())
 
 
@@ -1334,7 +1359,7 @@ async def get_post_status_by_slug(
     """Get details of a specific post status.
 
     Args:
-        status: The status slug (e.g., publish, draft, private).
+        status: The status slug. Common values: publish, future, draft, pending, private, trash.
     """
     return await get_client().get_post_status_by_slug(status, get_user_token())
 
@@ -1342,7 +1367,7 @@ async def get_post_status_by_slug(
 @mcp.tool(tags={"read", "primary", "wordpress"})
 async def search_content(
     query: str,
-    search_type: str = "post",
+    search_type: SearchType = "post",
     per_page: int = 10,
     page: int = 1,
     ctx: Context = None
@@ -1351,7 +1376,7 @@ async def search_content(
 
     Args:
         query: Search keyword or phrase.
-        search_type: Type of content to search (post, page, etc.). Defaults to "post".
+        search_type: Type of content to search. Valid values: post, page, post_tag, category, attachment, wp_block, wp_navigation. Defaults to "post".
         per_page: Maximum number of results. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
     """
