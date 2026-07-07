@@ -131,7 +131,7 @@ class WordPressClient:
     # Posts
     # =========================================================================
 
-    async def get_all_posts(
+    async def list_all_posts(
         self,
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
@@ -204,7 +204,7 @@ class WordPressClient:
     # Pages
     # =========================================================================
 
-    async def get_all_pages(
+    async def list_all_pages(
         self,
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
@@ -280,7 +280,7 @@ class WordPressClient:
     # Categories
     # =========================================================================
 
-    async def get_all_categories(
+    async def list_all_categories(
         self,
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
@@ -349,7 +349,7 @@ class WordPressClient:
     # Tags
     # =========================================================================
 
-    async def get_all_tags(
+    async def list_all_tags(
         self,
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
@@ -415,7 +415,7 @@ class WordPressClient:
     # Comments
     # =========================================================================
 
-    async def get_all_comments(
+    async def list_all_comments(
         self,
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
@@ -491,7 +491,7 @@ class WordPressClient:
     # Users
     # =========================================================================
 
-    async def get_all_users(
+    async def list_all_users(
         self,
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
@@ -537,7 +537,7 @@ class WordPressClient:
     # Navigation
     # =========================================================================
 
-    async def get_all_navigation(
+    async def list_all_navigation(
         self,
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
@@ -601,7 +601,7 @@ class WordPressClient:
     # Blocks
     # =========================================================================
 
-    async def get_all_blocks(
+    async def list_all_blocks(
         self,
         api_key: Optional[str] = None,
         include_all_fields: bool = False,
@@ -668,7 +668,7 @@ class WordPressClient:
     # Meta Tools
     # =========================================================================
 
-    async def get_taxonomies(
+    async def list_all_taxonomies(
         self,
         api_key: Optional[str] = None,
     ) -> Any:
@@ -683,7 +683,7 @@ class WordPressClient:
         data = await self.get(f"/wp/v2/taxonomies/{taxonomy}", api_key)
         return self._replace_base_urls(data)
 
-    async def get_post_types(
+    async def list_all_post_types(
         self,
         api_key: Optional[str] = None,
     ) -> Any:
@@ -698,7 +698,7 @@ class WordPressClient:
         data = await self.get(f"/wp/v2/types/{post_type}", api_key)
         return self._replace_base_urls(data)
 
-    async def get_post_statuses(
+    async def list_all_post_statuses(
         self,
         api_key: Optional[str] = None,
     ) -> Any:

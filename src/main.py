@@ -196,7 +196,7 @@ class UpdateBlockParam(BaseModel):
 # =============================================================================
 
 @mcp.tool()
-async def get_all_posts(
+async def list_all_posts(
     include_all_fields: bool = False,
     status: str = "",
     per_page: int = 10,
@@ -219,7 +219,7 @@ async def get_all_posts(
         orderby: Sort field (date, modified, id, title, etc.). Defaults to "date".
         order: Sort direction (asc or desc). Defaults to "desc".
     """
-    data = await get_client().get_all_posts(
+    data = await get_client().list_all_posts(
         get_user_token(),
         include_all_fields=include_all_fields if ALLOW_ALL_AGGREGATE else False,
         status=status,
@@ -384,7 +384,7 @@ async def delete_post_by_id(
 # =============================================================================
 
 @mcp.tool()
-async def get_all_pages(
+async def list_all_pages(
     include_all_fields: bool = False,
     status: str = "",
     per_page: int = 10,
@@ -409,7 +409,7 @@ async def get_all_pages(
         orderby: Sort field. Defaults to "date".
         order: Sort direction (asc or desc). Defaults to "desc".
     """
-    data = await get_client().get_all_pages(
+    data = await get_client().list_all_pages(
         get_user_token(),
         include_all_fields=include_all_fields if ALLOW_ALL_AGGREGATE else False,
         status=status,
@@ -571,7 +571,7 @@ async def delete_page_by_id(
 # =============================================================================
 
 @mcp.tool()
-async def get_all_categories(
+async def list_all_categories(
     include_all_fields: bool = False,
     per_page: int = 10,
     page: int = 1,
@@ -592,7 +592,7 @@ async def get_all_categories(
         orderby: Sort field. Defaults to "name".
         order: Sort direction (asc or desc). Defaults to "asc".
     """
-    data = await get_client().get_all_categories(
+    data = await get_client().list_all_categories(
         get_user_token(),
         include_all_fields=include_all_fields if ALLOW_ALL_AGGREGATE else False,
         per_page=per_page,
@@ -698,7 +698,7 @@ async def delete_category_by_id(
 # =============================================================================
 
 @mcp.tool()
-async def get_all_tags(
+async def list_all_tags(
     include_all_fields: bool = False,
     per_page: int = 10,
     page: int = 1,
@@ -717,7 +717,7 @@ async def get_all_tags(
         orderby: Sort field. Defaults to "name".
         order: Sort direction (asc or desc). Defaults to "asc".
     """
-    data = await get_client().get_all_tags(
+    data = await get_client().list_all_tags(
         get_user_token(),
         include_all_fields=include_all_fields if ALLOW_ALL_AGGREGATE else False,
         per_page=per_page,
@@ -816,7 +816,7 @@ async def delete_tag_by_id(
 # =============================================================================
 
 @mcp.tool()
-async def get_all_comments(
+async def list_all_comments(
     include_all_fields: bool = False,
     status: str = "",
     per_page: int = 10,
@@ -839,7 +839,7 @@ async def get_all_comments(
         parent: Filter by parent comment ID.
         author: Filter by author.
     """
-    data = await get_client().get_all_comments(
+    data = await get_client().list_all_comments(
         get_user_token(),
         include_all_fields=include_all_fields if ALLOW_ALL_AGGREGATE else False,
         status=status,
@@ -951,7 +951,7 @@ async def delete_comment_by_id(
 # =============================================================================
 
 @mcp.tool()
-async def get_all_users(
+async def list_all_users(
     include_all_fields: bool = False,
     per_page: int = 10,
     page: int = 1,
@@ -972,7 +972,7 @@ async def get_all_users(
         orderby: Sort field. Defaults to "name".
         order: Sort direction (asc or desc). Defaults to "asc".
     """
-    data = await get_client().get_all_users(
+    data = await get_client().list_all_users(
         get_user_token(),
         include_all_fields=include_all_fields if ALLOW_ALL_AGGREGATE else False,
         per_page=per_page,
@@ -1022,7 +1022,7 @@ async def get_current_user(
 # =============================================================================
 
 @mcp.tool()
-async def get_all_navigation(
+async def list_all_navigation(
     include_all_fields: bool = False,
     per_page: int = 10,
     page: int = 1,
@@ -1037,7 +1037,7 @@ async def get_all_navigation(
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
     """
-    data = await get_client().get_all_navigation(
+    data = await get_client().list_all_navigation(
         get_user_token(),
         include_all_fields=include_all_fields if ALLOW_ALL_AGGREGATE else False,
         per_page=per_page,
@@ -1147,7 +1147,7 @@ async def delete_navigation_by_id(
 # =============================================================================
 
 @mcp.tool()
-async def get_all_blocks(
+async def list_all_blocks(
     include_all_fields: bool = False,
     status: str = "",
     per_page: int = 10,
@@ -1164,7 +1164,7 @@ async def get_all_blocks(
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
     """
-    data = await get_client().get_all_blocks(
+    data = await get_client().list_all_blocks(
         get_user_token(),
         include_all_fields=include_all_fields if ALLOW_ALL_AGGREGATE else False,
         status=status,
@@ -1277,11 +1277,11 @@ async def delete_block_by_id(
 # =============================================================================
 
 @mcp.tool()
-async def get_taxonomies(
+async def list_all_taxonomies(
     ctx: Context = None
 ) -> dict[str, Any]:
     """List all registered taxonomies (categories, tags, nav_menu, etc.)."""
-    return await get_client().get_taxonomies(get_user_token())
+    return await get_client().list_all_taxonomies(get_user_token())
 
 
 @mcp.tool()
@@ -1298,11 +1298,11 @@ async def get_taxonomy_by_name(
 
 
 @mcp.tool()
-async def get_post_types(
+async def list_all_post_types(
     ctx: Context = None
 ) -> dict[str, Any]:
     """List all registered post types (post, page, attachment, etc.)."""
-    return await get_client().get_post_types(get_user_token())
+    return await get_client().list_all_post_types(get_user_token())
 
 
 @mcp.tool()
@@ -1319,11 +1319,11 @@ async def get_post_type_by_name(
 
 
 @mcp.tool()
-async def get_post_statuses(
+async def list_all_post_statuses(
     ctx: Context = None
 ) -> dict[str, Any]:
     """List all registered post statuses (publish, draft, private, etc.)."""
-    return await get_client().get_post_statuses(get_user_token())
+    return await get_client().list_all_post_statuses(get_user_token())
 
 
 @mcp.tool()

@@ -185,19 +185,19 @@ _block_id = call_tool("create_block", {
 print("\n# Posts Tests")
 print("-" * 40)
 
-run_test("get_all_posts_basic", "get_all_posts", {"per_page": 5},
+run_test("list_all_posts_basic", "list_all_posts", {"per_page": 5},
          lambda r: check_response(r, ["items"]))
 
-run_test("get_all_posts_with_pagination", "get_all_posts", {"per_page": 3, "page": 1},
+run_test("list_all_posts_with_pagination", "list_all_posts", {"per_page": 3, "page": 1},
          lambda r: check_response(r))
 
-run_test("get_all_posts_toon_compression", "get_all_posts", {"per_page": 3},
+run_test("list_all_posts_toon_compression", "list_all_posts", {"per_page": 3},
          lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
 
-run_test("get_all_posts_with_search", "get_all_posts", {"search": "hello", "per_page": 5},
+run_test("list_all_posts_with_search", "list_all_posts", {"search": "hello", "per_page": 5},
          lambda r: check_response(r))
 
-run_test("get_all_posts_filter_by_status", "get_all_posts", {"status": "publish", "per_page": 5},
+run_test("list_all_posts_filter_by_status", "list_all_posts", {"status": "publish", "per_page": 5},
          lambda r: check_response(r))
 
 run_test("get_post_by_id_basic", "get_post_by_id", {"id": _post_id},
@@ -233,16 +233,16 @@ run_test("delete_post_by_id_trash", "delete_post_by_id", {"id": _post_del_id},
 print("\n# Pages Tests")
 print("-" * 40)
 
-run_test("get_all_pages_basic", "get_all_pages", {"per_page": 5},
+run_test("list_all_pages_basic", "list_all_pages", {"per_page": 5},
          lambda r: check_response(r, ["items"]))
 
-run_test("get_all_pages_with_pagination", "get_all_pages", {"per_page": 3, "page": 1},
+run_test("list_all_pages_with_pagination", "list_all_pages", {"per_page": 3, "page": 1},
          lambda r: check_response(r))
 
-run_test("get_all_pages_toon_compression", "get_all_pages", {"per_page": 3},
+run_test("list_all_pages_toon_compression", "list_all_pages", {"per_page": 3},
          lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
 
-run_test("get_all_pages_filter_by_parent", "get_all_pages", {"parent": 0, "per_page": 5},
+run_test("list_all_pages_filter_by_parent", "list_all_pages", {"parent": 0, "per_page": 5},
          lambda r: check_response(r))
 
 run_test("get_page_by_id_basic", "get_page_by_id", {"id": _page_id},
@@ -277,16 +277,16 @@ run_test("delete_page_by_id_trash", "delete_page_by_id", {"id": _page_del_id},
 print("\n# Categories Tests")
 print("-" * 40)
 
-run_test("get_all_categories_basic", "get_all_categories", {"per_page": 5},
+run_test("list_all_categories_basic", "list_all_categories", {"per_page": 5},
          lambda r: check_response(r, ["items"]))
 
-run_test("get_all_categories_with_pagination", "get_all_categories", {"per_page": 3, "page": 1},
+run_test("list_all_categories_with_pagination", "list_all_categories", {"per_page": 3, "page": 1},
          lambda r: check_response(r))
 
-run_test("get_all_categories_toon_compression", "get_all_categories", {"per_page": 3},
+run_test("list_all_categories_toon_compression", "list_all_categories", {"per_page": 3},
          lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
 
-run_test("get_all_categories_with_search", "get_all_categories", {"search": "category", "per_page": 5},
+run_test("list_all_categories_with_search", "list_all_categories", {"search": "category", "per_page": 5},
          lambda r: check_response(r))
 
 run_test("get_category_by_id_basic", "get_category_by_id", {"id": 1},
@@ -318,16 +318,16 @@ run_test("delete_category_by_id_trash", "delete_category_by_id", {"id": _cat_del
 print("\n# Tags Tests")
 print("-" * 40)
 
-run_test("get_all_tags_basic", "get_all_tags", {"per_page": 5},
+run_test("list_all_tags_basic", "list_all_tags", {"per_page": 5},
          lambda r: check_response(r, ["items"]))
 
-run_test("get_all_tags_with_pagination", "get_all_tags", {"per_page": 3, "page": 1},
+run_test("list_all_tags_with_pagination", "list_all_tags", {"per_page": 3, "page": 1},
          lambda r: check_response(r))
 
-run_test("get_all_tags_toon_compression", "get_all_tags", {"per_page": 3},
+run_test("list_all_tags_toon_compression", "list_all_tags", {"per_page": 3},
          lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
 
-run_test("get_all_tags_with_search", "get_all_tags", {"search": "tag", "per_page": 5},
+run_test("list_all_tags_with_search", "list_all_tags", {"search": "tag", "per_page": 5},
          lambda r: check_response(r))
 
 run_test("get_tag_by_id_basic", "get_tag_by_id", {"id": _tag_id},
@@ -359,16 +359,16 @@ run_test("delete_tag_by_id_trash", "delete_tag_by_id", {"id": _tag_id},
 print("\n# Users Tests")
 print("-" * 40)
 
-run_test("get_all_users_basic", "get_all_users", {"per_page": 5},
+run_test("list_all_users_basic", "list_all_users", {"per_page": 5},
          lambda r: check_response(r, ["items"]))
 
-run_test("get_all_users_with_pagination", "get_all_users", {"per_page": 3, "page": 1},
+run_test("list_all_users_with_pagination", "list_all_users", {"per_page": 3, "page": 1},
          lambda r: check_response(r))
 
-run_test("get_all_users_toon_compression", "get_all_users", {"per_page": 3},
+run_test("list_all_users_toon_compression", "list_all_users", {"per_page": 3},
          lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
 
-run_test("get_all_users_with_search", "get_all_users", {"search": "admin", "per_page": 5},
+run_test("list_all_users_with_search", "list_all_users", {"search": "admin", "per_page": 5},
          lambda r: check_response(r))
 
 run_test("get_user_by_id_basic", "get_user_by_id", {"id": 1},
@@ -387,19 +387,19 @@ run_test("get_current_user_include_all_fields", "get_current_user", {"include_al
 print("\n# Comments Tests")
 print("-" * 40)
 
-run_test("get_all_comments_basic", "get_all_comments", {"per_page": 5},
+run_test("list_all_comments_basic", "list_all_comments", {"per_page": 5},
          lambda r: check_response(r, ["items"]))
 
-run_test("get_all_comments_with_pagination", "get_all_comments", {"per_page": 3, "page": 1},
+run_test("list_all_comments_with_pagination", "list_all_comments", {"per_page": 3, "page": 1},
          lambda r: check_response(r))
 
-run_test("get_all_comments_toon_compression", "get_all_comments", {"per_page": 3},
+run_test("list_all_comments_toon_compression", "list_all_comments", {"per_page": 3},
          lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
 
-run_test("get_all_comments_filter_by_post", "get_all_comments", {"post": _comment_post_id, "per_page": 5},
+run_test("list_all_comments_filter_by_post", "list_all_comments", {"post": _comment_post_id, "per_page": 5},
          lambda r: check_response(r))
 
-run_test("get_all_comments_filter_by_status", "get_all_comments", {"status": "approved", "per_page": 5},
+run_test("list_all_comments_filter_by_status", "list_all_comments", {"status": "approved", "per_page": 5},
          lambda r: check_response(r))
 
 run_test("get_comment_by_id_basic", "get_comment_by_id", {"id": _comment_id},
@@ -433,13 +433,13 @@ run_test("delete_comment_by_id_trash", "delete_comment_by_id", {"id": _comment_i
 print("\n# Navigation Tests")
 print("-" * 40)
 
-run_test("get_all_navigation_basic", "get_all_navigation", {"per_page": 5},
+run_test("list_all_navigation_basic", "list_all_navigation", {"per_page": 5},
          lambda r: check_response(r, ["items"]))
 
-run_test("get_all_navigation_with_pagination", "get_all_navigation", {"per_page": 3, "page": 1},
+run_test("list_all_navigation_with_pagination", "list_all_navigation", {"per_page": 3, "page": 1},
          lambda r: check_response(r))
 
-run_test("get_all_navigation_toon_compression", "get_all_navigation", {"per_page": 3},
+run_test("list_all_navigation_toon_compression", "list_all_navigation", {"per_page": 3},
          lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
 
 run_test("get_navigation_by_id_basic", "get_navigation_by_id", {"id": _nav_id},
@@ -468,16 +468,16 @@ run_test("update_navigation_partial", "update_navigation", {
 print("\n# Blocks Tests")
 print("-" * 40)
 
-run_test("get_all_blocks_basic", "get_all_blocks", {"per_page": 5},
+run_test("list_all_blocks_basic", "list_all_blocks", {"per_page": 5},
          lambda r: check_response(r, ["items"]))
 
-run_test("get_all_blocks_with_pagination", "get_all_blocks", {"per_page": 3, "page": 1},
+run_test("list_all_blocks_with_pagination", "list_all_blocks", {"per_page": 3, "page": 1},
          lambda r: check_response(r))
 
-run_test("get_all_blocks_toon_compression", "get_all_blocks", {"per_page": 3},
+run_test("list_all_blocks_toon_compression", "list_all_blocks", {"per_page": 3},
          lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
 
-run_test("get_all_blocks_with_search", "get_all_blocks", {"search": "test", "per_page": 5},
+run_test("list_all_blocks_with_search", "list_all_blocks", {"search": "test", "per_page": 5},
          lambda r: check_response(r))
 
 run_test("get_block_by_id_basic", "get_block_by_id", {"id": _block_id},
@@ -511,7 +511,7 @@ run_test("delete_block_by_id_trash", "delete_block_by_id", {"id": _block_id},
 print("\n# Meta Tools Tests")
 print("-" * 40)
 
-run_test("get_taxonomies", "get_taxonomies", {},
+run_test("list_all_taxonomies", "list_all_taxonomies", {},
          lambda r: check_response(r, ["category"]))
 
 run_test("get_taxonomy_by_name_category", "get_taxonomy_by_name", {"name": "category"},
@@ -523,7 +523,7 @@ run_test("get_taxonomy_by_name_post_tag", "get_taxonomy_by_name", {"name": "post
 run_test("get_taxonomy_by_name_nav_menu", "get_taxonomy_by_name", {"name": "nav_menu"},
          lambda r: check_response(r, ["name"]))
 
-run_test("get_post_types", "get_post_types", {},
+run_test("list_all_post_types", "list_all_post_types", {},
          lambda r: check_response(r, ["post"]))
 
 run_test("get_post_type_by_name_post", "get_post_type_by_name", {"type": "post"},
@@ -532,7 +532,7 @@ run_test("get_post_type_by_name_post", "get_post_type_by_name", {"type": "post"}
 run_test("get_post_type_by_name_page", "get_post_type_by_name", {"type": "page"},
          lambda r: check_response(r, ["name"]))
 
-run_test("get_post_statuses", "get_post_statuses", {},
+run_test("list_all_post_statuses", "list_all_post_statuses", {},
          lambda r: check_response(r, ["publish"]))
 
 run_test("get_post_status_by_slug_publish", "get_post_status_by_slug", {"status": "publish"},
@@ -551,35 +551,35 @@ run_test("get_server_status", "get_server_status", {},
 print("\n# TOON Compression Verification Tests")
 print("-" * 40)
 
-run_test("toon_verify_posts_list", "get_all_posts", {"per_page": 3},
+run_test("toon_verify_posts_list", "list_all_posts", {"per_page": 3},
          lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
                     "Bulk list returns items array"))
 
-run_test("toon_verify_pages_list", "get_all_pages", {"per_page": 3},
+run_test("toon_verify_pages_list", "list_all_pages", {"per_page": 3},
          lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
                     "Bulk list returns items array"))
 
-run_test("toon_verify_categories_list", "get_all_categories", {"per_page": 3},
+run_test("toon_verify_categories_list", "list_all_categories", {"per_page": 3},
          lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
                     "Bulk list returns items array"))
 
-run_test("toon_verify_tags_list", "get_all_tags", {"per_page": 3},
+run_test("toon_verify_tags_list", "list_all_tags", {"per_page": 3},
          lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
                     "Bulk list returns items array"))
 
-run_test("toon_verify_comments_list", "get_all_comments", {"per_page": 3},
+run_test("toon_verify_comments_list", "list_all_comments", {"per_page": 3},
          lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
                     "Bulk list returns items array"))
 
-run_test("toon_verify_users_list", "get_all_users", {"per_page": 3},
+run_test("toon_verify_users_list", "list_all_users", {"per_page": 3},
          lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
                     "Bulk list returns items array"))
 
-run_test("toon_verify_navigation_list", "get_all_navigation", {"per_page": 3},
+run_test("toon_verify_navigation_list", "list_all_navigation", {"per_page": 3},
          lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
                     "Bulk list returns items array"))
 
-run_test("toon_verify_blocks_list", "get_all_blocks", {"per_page": 3},
+run_test("toon_verify_blocks_list", "list_all_blocks", {"per_page": 3},
          lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
                     "Bulk list returns items array"))
 
@@ -629,13 +629,13 @@ run_test("search_content_empty_query", "search_content", {"query": ""},
 # =========================================================================
 
 _cleanup_specs = [
-    ("posts", "get_all_posts", ("publish", "draft", "trash"), "delete_post_by_id", True),
-    ("pages", "get_all_pages", ("publish", "draft", "trash"), "delete_page_by_id", True),
-    ("categories", "get_all_categories", None, "delete_category_by_id", False),
-    ("tags", "get_all_tags", None, "delete_tag_by_id", False),
-    ("comments", "get_all_comments", None, "delete_comment_by_id", False),
-    ("navigation", "get_all_navigation", None, "delete_navigation_by_id", False),
-    ("blocks", "get_all_blocks", ("publish", "draft", "trash"), "delete_block_by_id", False),
+    ("posts", "list_all_posts", ("publish", "draft", "trash"), "delete_post_by_id", True),
+    ("pages", "list_all_pages", ("publish", "draft", "trash"), "delete_page_by_id", True),
+    ("categories", "list_all_categories", None, "delete_category_by_id", False),
+    ("tags", "list_all_tags", None, "delete_tag_by_id", False),
+    ("comments", "list_all_comments", None, "delete_comment_by_id", False),
+    ("navigation", "list_all_navigation", None, "delete_navigation_by_id", False),
+    ("blocks", "list_all_blocks", ("publish", "draft", "trash"), "delete_block_by_id", False),
 ]
 
 for _cs_name, _cs_list_tool, _cs_statuses, _cs_del_tool, _cs_force in _cleanup_specs:
@@ -658,13 +658,13 @@ print("-" * 40)
 _leak_total = 0
 
 _resource_checks = [
-    ("posts", "get_all_posts", {"per_page": 100}),
-    ("pages", "get_all_pages", {"per_page": 100}),
-    ("categories", "get_all_categories", {"per_page": 100}),
-    ("tags", "get_all_tags", {"per_page": 100}),
-    ("comments", "get_all_comments", {"per_page": 100}),
-    ("navigation", "get_all_navigation", {"per_page": 100}),
-    ("blocks", "get_all_blocks", {"per_page": 100}),
+    ("posts", "list_all_posts", {"per_page": 100}),
+    ("pages", "list_all_pages", {"per_page": 100}),
+    ("categories", "list_all_categories", {"per_page": 100}),
+    ("tags", "list_all_tags", {"per_page": 100}),
+    ("comments", "list_all_comments", {"per_page": 100}),
+    ("navigation", "list_all_navigation", {"per_page": 100}),
+    ("blocks", "list_all_blocks", {"per_page": 100}),
 ]
 
 for _res_name, _res_tool, _res_args in _resource_checks:
