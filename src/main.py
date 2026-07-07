@@ -195,7 +195,7 @@ class UpdateBlockParam(BaseModel):
 # Posts Tools
 # =============================================================================
 
-@mcp.tool()
+@mcp.tool(tags={"read", "basic", "wordpress"})
 async def list_all_posts(
     include_all_fields: bool = False,
     status: str = "",
@@ -233,7 +233,7 @@ async def list_all_posts(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "basic", "wordpress"})
 async def get_post_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -250,7 +250,7 @@ async def get_post_by_id(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "basic", "wordpress"})
 async def create_post(
     title: str,
     content: str,
@@ -299,7 +299,7 @@ async def create_post(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "basic", "wordpress"})
 async def update_post(
     id: int,
     title: str = None,
@@ -361,7 +361,7 @@ async def update_post(
     return await get_client().update_post(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "basic", "wordpress"})
 async def delete_post_by_id(
     id: int,
     force: bool = False,
@@ -383,7 +383,7 @@ async def delete_post_by_id(
 # Pages Tools
 # =============================================================================
 
-@mcp.tool()
+@mcp.tool(tags={"read", "basic", "wordpress"})
 async def list_all_pages(
     include_all_fields: bool = False,
     status: str = "",
@@ -424,7 +424,7 @@ async def list_all_pages(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "basic", "wordpress"})
 async def get_page_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -441,7 +441,7 @@ async def get_page_by_id(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "basic", "wordpress"})
 async def create_page(
     title: str,
     content: str,
@@ -486,7 +486,7 @@ async def create_page(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "basic", "wordpress"})
 async def update_page(
     id: int,
     title: str = None,
@@ -548,7 +548,7 @@ async def update_page(
     return await get_client().update_page(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "basic", "wordpress"})
 async def delete_page_by_id(
     id: int,
     force: bool = False,
@@ -570,7 +570,7 @@ async def delete_page_by_id(
 # Categories Tools
 # =============================================================================
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def list_all_categories(
     include_all_fields: bool = False,
     per_page: int = 10,
@@ -605,7 +605,7 @@ async def list_all_categories(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def get_category_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -622,7 +622,7 @@ async def get_category_by_id(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def create_category(
     name: str,
     slug: str,
@@ -647,7 +647,7 @@ async def create_category(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def update_category(
     id: int,
     name: str = None,
@@ -677,7 +677,7 @@ async def update_category(
     return await get_client().update_category(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def delete_category_by_id(
     id: int,
     ctx: Context = None
@@ -697,7 +697,7 @@ async def delete_category_by_id(
 # Tags Tools
 # =============================================================================
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def list_all_tags(
     include_all_fields: bool = False,
     per_page: int = 10,
@@ -729,7 +729,7 @@ async def list_all_tags(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def get_tag_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -746,7 +746,7 @@ async def get_tag_by_id(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def create_tag(
     name: str,
     slug: str,
@@ -769,7 +769,7 @@ async def create_tag(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def update_tag(
     id: int,
     name: str = None,
@@ -795,7 +795,7 @@ async def update_tag(
     return await get_client().update_tag(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def delete_tag_by_id(
     id: int,
     ctx: Context = None
@@ -815,7 +815,7 @@ async def delete_tag_by_id(
 # Comments Tools
 # =============================================================================
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def list_all_comments(
     include_all_fields: bool = False,
     status: str = "",
@@ -853,7 +853,7 @@ async def list_all_comments(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def get_comment_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -870,7 +870,7 @@ async def get_comment_by_id(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def create_comment(
     post: int,
     content: str,
@@ -900,7 +900,7 @@ async def create_comment(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def update_comment(
     id: int,
     content: str = None,
@@ -930,7 +930,7 @@ async def update_comment(
     return await get_client().update_comment(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def delete_comment_by_id(
     id: int,
     ctx: Context = None
@@ -950,7 +950,7 @@ async def delete_comment_by_id(
 # Users Tools
 # =============================================================================
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def list_all_users(
     include_all_fields: bool = False,
     per_page: int = 10,
@@ -985,7 +985,7 @@ async def list_all_users(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def get_user_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -1002,7 +1002,7 @@ async def get_user_by_id(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def get_current_user(
     include_all_fields: bool = False,
     ctx: Context = None
@@ -1021,7 +1021,7 @@ async def get_current_user(
 # Navigation Tools
 # =============================================================================
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def list_all_navigation(
     include_all_fields: bool = False,
     per_page: int = 10,
@@ -1047,7 +1047,7 @@ async def list_all_navigation(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def get_navigation_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -1064,7 +1064,7 @@ async def get_navigation_by_id(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def create_navigation(
     title: str,
     status: str,
@@ -1092,7 +1092,7 @@ async def create_navigation(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def update_navigation(
     id: int,
     title: str = None,
@@ -1126,7 +1126,7 @@ async def update_navigation(
     return await get_client().update_navigation(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def delete_navigation_by_id(
     id: int,
     ctx: Context = None
@@ -1146,7 +1146,7 @@ async def delete_navigation_by_id(
 # Blocks Tools
 # =============================================================================
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def list_all_blocks(
     include_all_fields: bool = False,
     status: str = "",
@@ -1175,7 +1175,7 @@ async def list_all_blocks(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def get_block_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -1192,7 +1192,7 @@ async def get_block_by_id(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def create_block(
     title: str,
     content: str,
@@ -1220,7 +1220,7 @@ async def create_block(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def update_block(
     id: int,
     title: str = None,
@@ -1256,7 +1256,7 @@ async def update_block(
     )
 
 
-@mcp.tool()
+@mcp.tool(tags={"write", "primary", "wordpress"})
 async def delete_block_by_id(
     id: int,
     ctx: Context = None
@@ -1276,7 +1276,7 @@ async def delete_block_by_id(
 # Meta Tools
 # =============================================================================
 
-@mcp.tool()
+@mcp.tool(tags={"read", "advanced", "wordpress"})
 async def list_all_taxonomies(
     ctx: Context = None
 ) -> dict[str, Any]:
@@ -1284,7 +1284,7 @@ async def list_all_taxonomies(
     return await get_client().list_all_taxonomies(get_user_token())
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "advanced", "wordpress"})
 async def get_taxonomy_by_name(
     name: str,
     ctx: Context = None
@@ -1297,7 +1297,7 @@ async def get_taxonomy_by_name(
     return await get_client().get_taxonomy_by_name(name, get_user_token())
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "advanced", "wordpress"})
 async def list_all_post_types(
     ctx: Context = None
 ) -> dict[str, Any]:
@@ -1305,7 +1305,7 @@ async def list_all_post_types(
     return await get_client().list_all_post_types(get_user_token())
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "advanced", "wordpress"})
 async def get_post_type_by_name(
     type: str,
     ctx: Context = None
@@ -1318,7 +1318,7 @@ async def get_post_type_by_name(
     return await get_client().get_post_type_by_name(type, get_user_token())
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "advanced", "wordpress"})
 async def list_all_post_statuses(
     ctx: Context = None
 ) -> dict[str, Any]:
@@ -1326,7 +1326,7 @@ async def list_all_post_statuses(
     return await get_client().list_all_post_statuses(get_user_token())
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "advanced", "wordpress"})
 async def get_post_status_by_slug(
     status: str,
     ctx: Context = None
@@ -1339,7 +1339,7 @@ async def get_post_status_by_slug(
     return await get_client().get_post_status_by_slug(status, get_user_token())
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "primary", "wordpress"})
 async def search_content(
     query: str,
     search_type: str = "post",
@@ -1362,7 +1362,7 @@ async def search_content(
     return {"results": json_to_toon(data)}
 
 
-@mcp.tool()
+@mcp.tool(tags={"read", "advanced", "wordpress"})
 async def get_server_status(
     ctx: Context = None
 ) -> dict[str, Any]:
