@@ -228,8 +228,8 @@ async def list_all_posts(
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
         status: publish, future, draft, pending, private, or trash.
-        per_page: Maximum number of posts to return. Defaults to 10.
-        page: Page number for pagination. Defaults to 1.
+        per_page: Maximum number of posts to return. (Default: 10)
+        page: Page number for pagination. (Default: 1)
         search: Search keyword.
         author: Filter by author user ID(s). Single ID or comma-separated IDs as a string.
         orderby: author, comment_count, date, id, include, menu_order, modified, parent, relevance, slug, status, title, type, or rand. (Default: date)
@@ -288,15 +288,12 @@ async def create_post(
         title: Title of the new post.
         content: Content of the post.
         status: publish, future, draft, pending, private, or trash.
-        slug: URL-friendly slug. Defaults to empty.
-        author: Author user ID. Defaults to 0.
-        categories: List of category IDs. Defaults to empty list.
-        tags: List of tag IDs. Defaults to empty list.
-        featured_media: Featured image media ID. Defaults to 0.
-        comment_status: open or closed. (Default: open)
-        ping_status: open or closed. (Default: open)
-        format: standard, aside, chat, gallery, link, image, quote, status, video, or audio. (Default: standard)
-        password: Password protection. Defaults to empty.
+        slug: URL-friendly slug. (Default: empty)
+        author: Author user ID. (Default: 0)
+        categories: List of category IDs. (Default: empty list)
+        tags: List of tag IDs. (Default: empty list)
+        featured_media: Featured image media ID. (Default: 0)
+        password: Password protection. (Default: empty)
     """
     if categories is None:
         categories = []
@@ -417,8 +414,8 @@ async def list_all_pages(
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
         status: publish, future, draft, pending, private, or trash.
-        per_page: Maximum number of pages to return. Defaults to 10.
-        page: Page number for pagination. Defaults to 1.
+        per_page: Maximum number of pages to return. (Default: 10)
+        page: Page number for pagination. (Default: 1)
         search: Search keyword.
         author: Filter by author user ID(s). Single ID or comma-separated IDs as a string.
         parent: Filter by parent page ID. 0 means no filter.
@@ -479,15 +476,12 @@ async def create_page(
         title: Title of the new page.
         content: Content of the page.
         status: publish, future, draft, pending, private, or trash.
-        slug: URL-friendly slug. Defaults to empty.
-        parent: Parent page ID for hierarchical pages. Defaults to 0 (no parent).
-        menu_order: Order for menu placement. Defaults to 0.
-        author: Author user ID. Defaults to 0.
-        featured_media: Featured image media ID. Defaults to 0.
-        comment_status: open or closed. (Default: closed)
-        ping_status: open or closed. (Default: open)
-        template: Template file name. Empty string means default theme template.
-        password: Password protection. Defaults to empty.
+        slug: URL-friendly slug. (Default: empty)
+        parent: Parent page ID for hierarchical pages. (Default: 0)
+        menu_order: Order for menu placement. (Default: 0)
+        author: Author user ID. (Default: 0)
+        featured_media: Featured image media ID. (Default: 0)
+        password: Password protection. (Default: empty)
     """
     params = CreatePageParam(
         title=title, content=content, status=status,
@@ -601,8 +595,8 @@ async def list_all_categories(
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        per_page: Maximum number of categories to return. Defaults to 10.
-        page: Page number for pagination. Defaults to 1.
+        per_page: Maximum number of categories to return. (Default: 10)
+        page: Page number for pagination. (Default: 1)
         search: Search keyword.
         parent: Filter by parent category ID. 0 means no filter.
         orderby: id, include, name, slug, term_group, description, or count. (Default: name)
@@ -651,8 +645,8 @@ async def create_category(
     Args:
         name: Name of the new category.
         slug: URL-friendly slug.
-        description: Category description. Defaults to empty.
-        parent: Parent category ID for hierarchical categories. 0 means top-level category. Defaults to 0.
+        description: Category description. (Default: empty)
+        parent: Parent category ID for hierarchical categories. 0 means top-level category. (Default: 0)
     """
     params = CreateCategoryParam(
         name=name, slug=slug, description=description, parent=parent,
@@ -729,8 +723,8 @@ async def list_all_tags(
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        per_page: Maximum number of tags to return. Defaults to 10.
-        page: Page number for pagination. Defaults to 1.
+        per_page: Maximum number of tags to return. (Default: 10)
+        page: Page number for pagination. (Default: 1)
         search: Search keyword.
         orderby: id, include, name, slug, term_group, description, or count. (Default: name)
         order: asc or desc. (Default: asc)
@@ -776,7 +770,7 @@ async def create_tag(
     Args:
         name: Name of the new tag.
         slug: URL-friendly slug.
-        description: Tag description. Defaults to empty.
+        description: Tag description. (Default: empty)
     """
     params = CreateTagParam(
         name=name, slug=slug, description=description,
@@ -852,8 +846,8 @@ async def list_all_comments(
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
         status: approve, hold, spam, or trash.
-        per_page: Maximum number of comments to return. Defaults to 10.
-        page: Page number for pagination. Defaults to 1.
+        per_page: Maximum number of comments to return. (Default: 10)
+        page: Page number for pagination. (Default: 1)
         search: Search keyword.
         post: Filter by post ID.
         parent: Filter by parent comment ID.
@@ -906,9 +900,9 @@ async def create_comment(
         post: The post ID to attach the comment to.
         content: Comment content text.
         status: approve, hold, spam, or trash.
-        parent: Parent comment ID for threaded replies. 0 means top-level comment. Defaults to 0.
-        author_name: Name of the comment author. Defaults to empty.
-        author_url: URL of the comment author. Defaults to empty.
+        parent: Parent comment ID for threaded replies. 0 means top-level comment. (Default: 0)
+        author_name: Name of the comment author. (Default: empty)
+        author_url: URL of the comment author. (Default: empty)
     """
     params = CreateCommentParam(
         post=post, content=content, status=status,
@@ -987,8 +981,8 @@ async def list_all_users(
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        per_page: Maximum number of users to return. Defaults to 10.
-        page: Page number for pagination. Defaults to 1.
+        per_page: Maximum number of users to return. (Default: 10)
+        page: Page number for pagination. (Default: 1)
         search: Search keyword.
         roles: administrator, editor, author, contributor, or subscriber.
         orderby: id, include, name, registered_date, slug, email, or url. (Default: name)
@@ -1055,8 +1049,8 @@ async def list_all_navigation(
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        per_page: Maximum number of navigation menus to return. Defaults to 10.
-        page: Page number for pagination. Defaults to 1.
+        per_page: Maximum number of navigation menus to return. (Default: 10)
+        page: Page number for pagination. (Default: 1)
         search: Search keyword.
     """
     data = await get_client().list_all_navigation(
@@ -1100,9 +1094,9 @@ async def create_navigation(
     Args:
         title: Title of the new navigation menu.
         status: publish, future, draft, pending, private, or trash.
-        slug: URL-friendly slug. Defaults to empty.
-        content: Navigation content (menu items). Defaults to empty.
-        template: Template file name. Empty string means default theme template. Defaults to empty.
+        slug: URL-friendly slug. (Default: empty)
+        content: Navigation content (menu items). (Default: empty)
+        template: Template file name. Empty string means default theme template. (Default: empty)
     """
     params = CreateNavigationParam(
         title=title, status=status, slug=slug,
@@ -1184,8 +1178,8 @@ async def list_all_blocks(
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
         status: publish, future, draft, pending, private, or trash.
-        per_page: Maximum number of blocks to return. Defaults to 10.
-        page: Page number for pagination. Defaults to 1.
+        per_page: Maximum number of blocks to return. (Default: 10)
+        page: Page number for pagination. (Default: 1)
         search: Search keyword.
     """
     data = await get_client().list_all_blocks(
@@ -1231,8 +1225,8 @@ async def create_block(
         title: Title of the new block.
         content: Block content.
         status: publish, future, draft, pending, private, or trash.
-        slug: URL-friendly slug. Defaults to empty.
-        template: Template file name. Empty string means default theme template. Defaults to empty.
+        slug: URL-friendly slug. (Default: empty)
+        template: Template file name. Empty string means default theme template. (Default: empty)
     """
     params = CreateBlockParam(
         title=title, content=content, status=status,
@@ -1378,8 +1372,8 @@ async def search_content(
     Args:
         query: Search keyword or phrase.
         search_type: post, page, post_tag, category, attachment, wp_block, or wp_navigation. (Default: post)
-        per_page: Maximum number of results. Defaults to 10.
-        page: Page number for pagination. Defaults to 1.
+        per_page: Maximum number of results. (Default: 10)
+        page: Page number for pagination. (Default: 1)
     """
     data = await get_client().search_content(
         query, get_user_token(), search_type=search_type,
