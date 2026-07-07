@@ -227,13 +227,13 @@ async def list_all_posts(
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        status: Filter by post status. Valid values: publish, future, draft, pending, private, trash. Pass empty string for no filter.
+        status: publish, future, draft, pending, private, or trash.
         per_page: Maximum number of posts to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
         author: Filter by author user ID(s). Single ID or comma-separated IDs as a string.
-        orderby: Sort field. Valid values: author, comment_count, date, id, include, menu_order, modified, parent, relevance, slug, status, title, type, rand. Defaults to "date".
-        order: Sort direction. Valid values: asc, desc. Defaults to "desc".
+        orderby: author, comment_count, date, id, include, menu_order, modified, parent, relevance, slug, status, title, type, or rand. (Default: date)
+        order: asc or desc. (Default: desc)
     """
     data = await get_client().list_all_posts(
         get_user_token(),
@@ -287,15 +287,15 @@ async def create_post(
     Args:
         title: Title of the new post.
         content: Content of the post.
-        status: Post status. Valid values: publish, future, draft, pending, private, trash.
+        status: publish, future, draft, pending, private, or trash.
         slug: URL-friendly slug. Defaults to empty.
         author: Author user ID. Defaults to 0.
         categories: List of category IDs. Defaults to empty list.
         tags: List of tag IDs. Defaults to empty list.
         featured_media: Featured image media ID. Defaults to 0.
-        comment_status: Whether comments are open. Valid values: open, closed. Defaults to "open".
-        ping_status: Whether pings are open. Valid values: open, closed. Defaults to "open".
-        format: Post format. Valid values: standard, aside, chat, gallery, link, image, quote, status, video, audio. Defaults to "standard".
+        comment_status: open or closed. (Default: open)
+        ping_status: open or closed. (Default: open)
+        format: standard, aside, chat, gallery, link, image, quote, status, video, or audio. (Default: standard)
         password: Password protection. Defaults to empty.
     """
     if categories is None:
@@ -338,15 +338,15 @@ async def update_post(
         id: The unique ID of the post to update.
         title: New title for the post.
         content: New content for the post.
-        status: New post status. Valid values: publish, future, draft, pending, private, trash.
+        status: publish, future, draft, pending, private, or trash.
         slug: New URL-friendly slug.
         author: New author user ID.
         categories: New list of category IDs.
         tags: New list of tag IDs.
         featured_media: New featured image media ID.
-        comment_status: New comment status. Valid values: open, closed.
-        ping_status: New ping status. Valid values: open, closed.
-        format: New post format. Valid values: standard, aside, chat, gallery, link, image, quote, status, video, audio.
+        comment_status: open or closed.
+        ping_status: open or closed.
+        format: standard, aside, chat, gallery, link, image, quote, status, video, or audio.
         password: New password protection.
     """
     payload = {}
@@ -416,14 +416,14 @@ async def list_all_pages(
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        status: Filter by page status. Valid values: publish, future, draft, pending, private, trash. Pass empty string for no filter.
+        status: publish, future, draft, pending, private, or trash.
         per_page: Maximum number of pages to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
         author: Filter by author user ID(s). Single ID or comma-separated IDs as a string.
         parent: Filter by parent page ID. 0 means no filter.
-        orderby: Sort field. Valid values: author, comment_count, date, id, include, menu_order, modified, parent, relevance, slug, status, title, type, rand. Defaults to "date".
-        order: Sort direction. Valid values: asc, desc. Defaults to "desc".
+        orderby: author, comment_count, date, id, include, menu_order, modified, parent, relevance, slug, status, title, type, or rand. (Default: date)
+        order: asc or desc. (Default: desc)
     """
     data = await get_client().list_all_pages(
         get_user_token(),
@@ -478,14 +478,14 @@ async def create_page(
     Args:
         title: Title of the new page.
         content: Content of the page.
-        status: Page status. Valid values: publish, future, draft, pending, private, trash.
+        status: publish, future, draft, pending, private, or trash.
         slug: URL-friendly slug. Defaults to empty.
         parent: Parent page ID for hierarchical pages. Defaults to 0 (no parent).
         menu_order: Order for menu placement. Defaults to 0.
         author: Author user ID. Defaults to 0.
         featured_media: Featured image media ID. Defaults to 0.
-        comment_status: Whether comments are open. Valid values: open, closed. Defaults to "closed".
-        ping_status: Whether pings are open. Valid values: open, closed. Defaults to "open".
+        comment_status: open or closed. (Default: closed)
+        ping_status: open or closed. (Default: open)
         template: Template file name. Empty string means default theme template.
         password: Password protection. Defaults to empty.
     """
@@ -525,14 +525,14 @@ async def update_page(
         id: The unique ID of the page to update.
         title: New title for the page.
         content: New content for the page.
-        status: New page status. Valid values: publish, future, draft, pending, private, trash.
+        status: publish, future, draft, pending, private, or trash.
         slug: New URL-friendly slug.
         parent: New parent page ID.
         menu_order: New menu order.
         author: New author user ID.
         featured_media: New featured image media ID.
-        comment_status: New comment status. Valid values: open, closed.
-        ping_status: New ping status. Valid values: open, closed.
+        comment_status: open or closed.
+        ping_status: open or closed.
         template: New template file name. Empty string means default theme template.
         password: New password protection.
     """
@@ -605,8 +605,8 @@ async def list_all_categories(
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
         parent: Filter by parent category ID. 0 means no filter.
-        orderby: Sort field. Valid values: id, include, name, slug, term_group, description, count. Defaults to "name".
-        order: Sort direction. Valid values: asc, desc. Defaults to "asc".
+        orderby: id, include, name, slug, term_group, description, or count. (Default: name)
+        order: asc or desc. (Default: asc)
     """
     data = await get_client().list_all_categories(
         get_user_token(),
@@ -732,8 +732,8 @@ async def list_all_tags(
         per_page: Maximum number of tags to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
-        orderby: Sort field. Valid values: id, include, name, slug, term_group, description, count. Defaults to "name".
-        order: Sort direction. Valid values: asc, desc. Defaults to "asc".
+        orderby: id, include, name, slug, term_group, description, or count. (Default: name)
+        order: asc or desc. (Default: asc)
     """
     data = await get_client().list_all_tags(
         get_user_token(),
@@ -851,7 +851,7 @@ async def list_all_comments(
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        status: Filter by comment status. Valid values: approve, hold, spam, trash. Pass empty string for no filter.
+        status: approve, hold, spam, or trash.
         per_page: Maximum number of comments to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
@@ -905,7 +905,7 @@ async def create_comment(
     Args:
         post: The post ID to attach the comment to.
         content: Comment content text.
-        status: Comment status. Valid values: approve, hold, spam, trash.
+        status: approve, hold, spam, or trash.
         parent: Parent comment ID for threaded replies. 0 means top-level comment. Defaults to 0.
         author_name: Name of the comment author. Defaults to empty.
         author_url: URL of the comment author. Defaults to empty.
@@ -934,7 +934,7 @@ async def update_comment(
     Args:
         id: The unique ID of the comment to update.
         content: New content for the comment.
-        status: New status. Valid values: approve, hold, spam, trash.
+        status: approve, hold, spam, or trash.
         author_name: New author name.
         author_url: New author URL.
     """
@@ -990,9 +990,9 @@ async def list_all_users(
         per_page: Maximum number of users to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
-        roles: Filter by user role. Valid values: administrator, editor, author, contributor, subscriber. Pass empty string for no filter.
-        orderby: Sort field. Valid values: id, include, name, registered_date, slug, email, url. Defaults to "name".
-        order: Sort direction. Valid values: asc, desc. Defaults to "asc".
+        roles: administrator, editor, author, contributor, or subscriber.
+        orderby: id, include, name, registered_date, slug, email, or url. (Default: name)
+        order: asc or desc. (Default: asc)
     """
     data = await get_client().list_all_users(
         get_user_token(),
@@ -1099,7 +1099,7 @@ async def create_navigation(
 
     Args:
         title: Title of the new navigation menu.
-        status: Navigation menu status. Valid values: publish, future, draft, pending, private, trash.
+        status: publish, future, draft, pending, private, or trash.
         slug: URL-friendly slug. Defaults to empty.
         content: Navigation content (menu items). Defaults to empty.
         template: Template file name. Empty string means default theme template. Defaults to empty.
@@ -1129,7 +1129,7 @@ async def update_navigation(
     Args:
         id: The unique ID of the navigation menu to update.
         title: New title.
-        status: New status. Valid values: publish, future, draft, pending, private, trash.
+        status: publish, future, draft, pending, private, or trash.
         slug: New URL-friendly slug.
         content: New navigation content.
         template: New template file name. Empty string means default theme template.
@@ -1183,7 +1183,7 @@ async def list_all_blocks(
 
     Args:
         include_all_fields: Default False (common fields only). Set True for all fields.
-        status: Filter by block status. Valid values: publish, future, draft, pending, private, trash. Pass empty string for no filter.
+        status: publish, future, draft, pending, private, or trash.
         per_page: Maximum number of blocks to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
@@ -1230,7 +1230,7 @@ async def create_block(
     Args:
         title: Title of the new block.
         content: Block content.
-        status: Block status. Valid values: publish, future, draft, pending, private, trash.
+        status: publish, future, draft, pending, private, or trash.
         slug: URL-friendly slug. Defaults to empty.
         template: Template file name. Empty string means default theme template. Defaults to empty.
     """
@@ -1260,7 +1260,7 @@ async def update_block(
         id: The unique ID of the block to update.
         title: New title.
         content: New block content.
-        status: New status. Valid values: publish, future, draft, pending, private, trash.
+        status: publish, future, draft, pending, private, or trash.
         slug: New URL-friendly slug.
         template: New template file name. Empty string means default theme template.
     """
@@ -1377,7 +1377,7 @@ async def search_content(
 
     Args:
         query: Search keyword or phrase.
-        search_type: Type of content to search. Valid values: post, page, post_tag, category, attachment, wp_block, wp_navigation. Defaults to "post".
+        search_type: post, page, post_tag, category, attachment, wp_block, or wp_navigation. (Default: post)
         per_page: Maximum number of results. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
     """
