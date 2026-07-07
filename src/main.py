@@ -210,9 +210,7 @@ async def get_all_posts(
     """List all post records.
 
     Args:
-        include_all_fields: When False (default), each post contains only
-            commonly used fields (id, title, status, author, categories, tags).
-            Set to True to include all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
         status: Filter by post status (publish, draft, private, etc.).
         per_page: Maximum number of posts to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
@@ -245,8 +243,7 @@ async def get_post_by_id(
 
     Args:
         id: The unique ID of the post.
-        include_all_fields: When False (default), returns only commonly used
-            fields. Set to True to retrieve all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
     """
     return await get_client().get_post_by_id(
         id, get_user_token(), include_all_fields=include_all_fields
@@ -272,9 +269,9 @@ async def create_post(
     """Create a new post.
 
     Args:
-        title: Title of the new post (required).
-        content: Content of the post (required).
-        status: Post status - publish, draft, private, etc. (required).
+        title: Title of the new post.
+        content: Content of the post.
+        status: Post status - publish, draft, private, etc..
         slug: URL-friendly slug. Defaults to empty.
         author: Author user ID. Defaults to 0.
         categories: List of category IDs. Defaults to empty list.
@@ -322,7 +319,7 @@ async def update_post(
     """Update an existing post.
 
     Args:
-        id: The unique ID of the post to update (required).
+        id: The unique ID of the post to update.
         title: New title for the post.
         content: New content for the post.
         status: New status (publish, draft, private, etc.).
@@ -402,9 +399,7 @@ async def get_all_pages(
     """List all page records.
 
     Args:
-        include_all_fields: When False (default), each page contains only
-            commonly used fields (id, title, status, author, parent).
-            Set to True to include all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
         status: Filter by page status.
         per_page: Maximum number of pages to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
@@ -439,8 +434,7 @@ async def get_page_by_id(
 
     Args:
         id: The unique ID of the page.
-        include_all_fields: When False (default), returns only commonly used
-            fields. Set to True to retrieve all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
     """
     return await get_client().get_page_by_id(
         id, get_user_token(), include_all_fields=include_all_fields
@@ -466,9 +460,9 @@ async def create_page(
     """Create a new page.
 
     Args:
-        title: Title of the new page (required).
-        content: Content of the page (required).
-        status: Page status - publish, draft, private, etc. (required).
+        title: Title of the new page.
+        content: Content of the page.
+        status: Page status - publish, draft, private, etc..
         slug: URL-friendly slug. Defaults to empty.
         parent: Parent page ID for hierarchical pages. Defaults to 0 (no parent).
         menu_order: Order for menu placement. Defaults to 0.
@@ -512,7 +506,7 @@ async def update_page(
     """Update an existing page.
 
     Args:
-        id: The unique ID of the page to update (required).
+        id: The unique ID of the page to update.
         title: New title for the page.
         content: New content for the page.
         status: New status.
@@ -590,9 +584,7 @@ async def get_all_categories(
     """List all category records.
 
     Args:
-        include_all_fields: When False (default), each category contains only
-            commonly used fields (id, name, slug, parent, count).
-            Set to True to include all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
         per_page: Maximum number of categories to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
@@ -623,8 +615,7 @@ async def get_category_by_id(
 
     Args:
         id: The unique ID of the category.
-        include_all_fields: When False (default), returns only commonly used
-            fields. Set to True to retrieve all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
     """
     return await get_client().get_category_by_id(
         id, get_user_token(), include_all_fields=include_all_fields
@@ -642,8 +633,8 @@ async def create_category(
     """Create a new category.
 
     Args:
-        name: Name of the new category (required).
-        slug: URL-friendly slug (required).
+        name: Name of the new category.
+        slug: URL-friendly slug.
         description: Category description. Defaults to empty.
         parent: Parent category ID for hierarchical categories. Defaults to 0.
     """
@@ -668,7 +659,7 @@ async def update_category(
     """Update an existing category.
 
     Args:
-        id: The unique ID of the category to update (required).
+        id: The unique ID of the category to update.
         name: New name for the category.
         slug: New URL-friendly slug.
         description: New description.
@@ -719,9 +710,7 @@ async def get_all_tags(
     """List all tag records.
 
     Args:
-        include_all_fields: When False (default), each tag contains only
-            commonly used fields (id, name, slug, count).
-            Set to True to include all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
         per_page: Maximum number of tags to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
@@ -750,8 +739,7 @@ async def get_tag_by_id(
 
     Args:
         id: The unique ID of the tag.
-        include_all_fields: When False (default), returns only commonly used
-            fields. Set to True to retrieve all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
     """
     return await get_client().get_tag_by_id(
         id, get_user_token(), include_all_fields=include_all_fields
@@ -768,8 +756,8 @@ async def create_tag(
     """Create a new tag.
 
     Args:
-        name: Name of the new tag (required).
-        slug: URL-friendly slug (required).
+        name: Name of the new tag.
+        slug: URL-friendly slug.
         description: Tag description. Defaults to empty.
     """
     params = CreateTagParam(
@@ -792,7 +780,7 @@ async def update_tag(
     """Update an existing tag.
 
     Args:
-        id: The unique ID of the tag to update (required).
+        id: The unique ID of the tag to update.
         name: New name for the tag.
         slug: New URL-friendly slug.
         description: New description.
@@ -842,9 +830,7 @@ async def get_all_comments(
     """List all comment records.
 
     Args:
-        include_all_fields: When False (default), each comment contains only
-            commonly used fields (id, post, author_name, status, parent).
-            Set to True to include all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
         status: Filter by comment status (approved, hold, spam, trash).
         per_page: Maximum number of comments to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
@@ -877,8 +863,7 @@ async def get_comment_by_id(
 
     Args:
         id: The unique ID of the comment.
-        include_all_fields: When False (default), returns only commonly used
-            fields. Set to True to retrieve all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
     """
     return await get_client().get_comment_by_id(
         id, get_user_token(), include_all_fields=include_all_fields
@@ -898,9 +883,9 @@ async def create_comment(
     """Create a new comment.
 
     Args:
-        post: The post ID to attach the comment to (required).
-        content: Comment content text (required).
-        status: Comment status - approved, hold, spam, trash (required).
+        post: The post ID to attach the comment to.
+        content: Comment content text.
+        status: Comment status - approved, hold, spam, trash.
         parent: Parent comment ID for threaded replies. Defaults to 0.
         author_name: Name of the comment author. Defaults to empty.
         author_url: URL of the comment author. Defaults to empty.
@@ -927,7 +912,7 @@ async def update_comment(
     """Update an existing comment.
 
     Args:
-        id: The unique ID of the comment to update (required).
+        id: The unique ID of the comment to update.
         content: New content for the comment.
         status: New status (approved, hold, spam, trash).
         author_name: New author name.
@@ -979,9 +964,7 @@ async def get_all_users(
     """List all user records.
 
     Args:
-        include_all_fields: When False (default), each user contains only
-            commonly used fields (id, name, slug, link).
-            Set to True to include all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
         per_page: Maximum number of users to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
@@ -1012,8 +995,7 @@ async def get_user_by_id(
 
     Args:
         id: The unique ID of the user.
-        include_all_fields: When False (default), returns only commonly used
-            fields. Set to True to retrieve all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
     """
     return await get_client().get_user_by_id(
         id, get_user_token(), include_all_fields=include_all_fields
@@ -1028,8 +1010,7 @@ async def get_current_user(
     """Get the current authenticated user.
 
     Args:
-        include_all_fields: When False (default), returns only commonly used
-            fields. Set to True to retrieve all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
     """
     return await get_client().get_current_user(
         get_user_token(), include_all_fields=include_all_fields
@@ -1051,9 +1032,7 @@ async def get_all_navigation(
     """List all navigation menu records.
 
     Args:
-        include_all_fields: When False (default), each navigation contains only
-            commonly used fields (id, title, status, slug).
-            Set to True to include all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
         per_page: Maximum number of navigation menus to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
         search: Search keyword.
@@ -1078,8 +1057,7 @@ async def get_navigation_by_id(
 
     Args:
         id: The unique ID of the navigation menu.
-        include_all_fields: When False (default), returns only commonly used
-            fields. Set to True to retrieve all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
     """
     return await get_client().get_navigation_by_id(
         id, get_user_token(), include_all_fields=include_all_fields
@@ -1098,8 +1076,8 @@ async def create_navigation(
     """Create a new navigation menu.
 
     Args:
-        title: Title of the new navigation menu (required).
-        status: Navigation status - publish, draft, etc. (required).
+        title: Title of the new navigation menu.
+        status: Navigation status - publish, draft, etc..
         slug: URL-friendly slug. Defaults to empty.
         content: Navigation content (menu items). Defaults to empty.
         template: Template file name. Defaults to empty.
@@ -1127,7 +1105,7 @@ async def update_navigation(
     """Update an existing navigation menu.
 
     Args:
-        id: The unique ID of the navigation menu to update (required).
+        id: The unique ID of the navigation menu to update.
         title: New title.
         status: New status.
         slug: New URL-friendly slug.
@@ -1180,9 +1158,7 @@ async def get_all_blocks(
     """List all block records.
 
     Args:
-        include_all_fields: When False (default), each block contains only
-            commonly used fields (id, title, status, slug).
-            Set to True to include all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
         status: Filter by block status.
         per_page: Maximum number of blocks to return. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
@@ -1209,8 +1185,7 @@ async def get_block_by_id(
 
     Args:
         id: The unique ID of the block.
-        include_all_fields: When False (default), returns only commonly used
-            fields. Set to True to retrieve all available fields.
+        include_all_fields: Default False (common fields only). Set True for all fields.
     """
     return await get_client().get_block_by_id(
         id, get_user_token(), include_all_fields=include_all_fields
@@ -1229,9 +1204,9 @@ async def create_block(
     """Create a new block.
 
     Args:
-        title: Title of the new block (required).
-        content: Block content (required).
-        status: Block status - publish, draft, etc. (required).
+        title: Title of the new block.
+        content: Block content.
+        status: Block status - publish, draft, etc..
         slug: URL-friendly slug. Defaults to empty.
         template: Template file name. Defaults to empty.
     """
@@ -1258,7 +1233,7 @@ async def update_block(
     """Update an existing block.
 
     Args:
-        id: The unique ID of the block to update (required).
+        id: The unique ID of the block to update.
         title: New title.
         content: New block content.
         status: New status.
@@ -1375,7 +1350,7 @@ async def search_content(
     """Search across WordPress content.
 
     Args:
-        query: Search keyword or phrase (required).
+        query: Search keyword or phrase.
         search_type: Type of content to search (post, page, etc.). Defaults to "post".
         per_page: Maximum number of results. Defaults to 10.
         page: Page number for pagination. Defaults to 1.
