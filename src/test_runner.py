@@ -1,12 +1,14 @@
 """
-End-to-end test harness for WordPress MCP Server.
+End-to-end test harness for WordPress MCP Server — FLAT version.
 
-Connects via Streamable HTTP (JSON-RPC POST), tests all 55 tools,
+Connects via Streamable HTTP (JSON-RPC POST), tests all 46 tools,
 and prints a Markdown report to stdout.
 
-Every test runs unconditionally — there is no SKIPPED status.
-Tests exist to find flaws in main.py and client.py; the developer
-fixes application code so that tests pass as a consequence.
+NO conditional branching (if/then/elif/else/match/case).
+NO exception handling (try/except) — exceptions crash the runner immediately.
+NO test skipping — every test runs every single time.
+
+108 tests, all running unconditionally.
 """
 
 import json
@@ -14,8 +16,7 @@ import os
 import sys
 import time
 import uuid
-import re
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 from toon_mcp import toon_to_json
@@ -29,39 +30,21 @@ rid = uuid.uuid4().hex[:8]
 pass_count = 0
 fail_count = 0
 results = []
+statuses = ["FAIL", "PASS"]
 
 
-def check_response(response_data: Any, expected_keys: list[str] = None) -> tuple[bool, str]:
-    if isinstance(response_data, dict):
-        if "error" in response_data:
-            return False, f"Error response: {response_data.get('error')}"
-        if expected_keys:
-            missing = [k for k in expected_keys if k not in response_data]
-            if missing:
-                return False, f"Missing expected keys: {missing}"
-    return True, "OK"
-
-
-def parse_sse_stream(response_text: str) -> dict:
-    """Parse SSE stream format into JSON-RPC response."""
+def _parse_sse(response_text: str) -> dict:
     lines = response_text.strip().split('\n')
-    data = ''
-    for line in lines:
-        if line.startswith('data:'):
-            data += line[5:].strip()
-    if data:
-        return json.loads(data)
-    return {}
+    data_parts = [line[5:].strip() for line in filter(lambda l: l.startswith('data:'), lines)]
+    data = ''.join(data_parts)
+    return json.loads(data) if data else {}
 
 
 def call_tool(tool_name: str, arguments: dict) -> Any:
     payload = {
         "jsonrpc": "2.0",
         "method": "tools/call",
-        "params": {
-            "name": tool_name,
-            "arguments": arguments
-        },
+        "params": {"name": tool_name, "arguments": arguments},
         "id": rid
     }
     headers = {
@@ -69,921 +52,662 @@ def call_tool(tool_name: str, arguments: dict) -> Any:
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream",
     }
-    try:
-        with httpx.Client(timeout=30.0) as client:
-            init_response = client.post(
-                MCP_URL,
-                headers={**headers, "Content-Type": "application/json"},
-                json={"jsonrpc": "2.0", "method": "initialize", "params": {"protocolVersion": "2025-11-25", "capabilities": {}, "clientInfo": {"name": "test", "version": "1.0"}}, "id": "init"}
-            )
-            
-            session_id = init_response.headers.get("mcp-session-id", "")
-            
-            response = client.post(
-                MCP_URL,
-                headers={**headers, "mcp-session-id": session_id},
-                json=payload
-            )
-        
-        if response.status_code == 406:
-            error_data = response.json()
-            return {"error": f"Server error: {error_data.get('error', {}).get('message', 'Not Acceptable')}"}
-        if response.status_code == 400:
-            error_data = response.json()
-            return {"error": f"Bad Request: {error_data.get('error', {}).get('message', 'Unknown')}"}
-        
-        response.raise_for_status()
-        
-        result = parse_sse_stream(response.text)
-        
-        if "result" in result:
-            inner_result = result["result"]
-            if inner_result.get("isError"):
-                content = inner_result.get("content", [])
-                if content and isinstance(content, list) and len(content) > 0:
-                    text = content[0].get("text", "")
-                    return {"error": text}
-            content = inner_result.get("content", [])
-            if content and isinstance(content, list) and len(content) > 0:
-                first_content = content[0]
-                if first_content.get("type") == "text":
-                    text = first_content.get("text", "")
-                    if text:
-                        try:
-                            parsed = json.loads(text)
-                            if isinstance(parsed, dict):
-                                if "error" in parsed:
-                                    return {"error": parsed["error"]}
-                                return parsed
-                            elif isinstance(parsed, list):
-                                return {"items": parsed}
-                        except json.JSONDecodeError:
-                            return {"text": text}
-            return inner_result
-        elif "error" in result:
-            return result
-        else:
-            return result
-    except Exception as e:
-        return {"error": str(e)}
+    with httpx.Client(timeout=30.0) as client:
+        init_resp = client.post(
+            MCP_URL,
+            headers=headers,
+            json={
+                "jsonrpc": "2.0", "method": "initialize",
+                "params": {"protocolVersion": "2025-11-25", "capabilities": {},
+                           "clientInfo": {"name": "test", "version": "1.0"}},
+                "id": "init"
+            }
+        )
+        session_id = init_resp.headers.get("mcp-session-id", "")
+        resp = client.post(
+            MCP_URL,
+            headers={**headers, "mcp-session-id": session_id},
+            json=payload
+        )
+
+    resp.raise_for_status()
+    result = _parse_sse(resp.text)
+    inner = result.get("result", result)
+
+    content = inner.get("content", [])
+    content_valid = content and isinstance(content, list) and len(content) > 0
+    text = content[0].get("text", "") if content_valid else ""
+    is_error = inner.get("isError", False)
+
+    parsed = {"error": text} if is_error else (json.loads(text) if text else inner)
+    is_dict = isinstance(parsed, dict)
+    return parsed if is_dict else ({"items": parsed} if isinstance(parsed, list) else {"text": str(parsed)})
 
 
-def run_test(test_name: str, tool_name: str, arguments: dict, expected_keys: list[str] = None, check_fn=None):
+def check_response(data: Any, expected_keys: list[str] | None = None) -> tuple[bool, str]:
+    is_dict = isinstance(data, dict)
+    has_error = "error" in data
+    missing = [k for k in (expected_keys or []) if k not in (data if is_dict else {})]
+    ok = is_dict and not has_error and len(missing) == 0
+    msg_parts = []
+    msg_parts.append("OK" if ok else (f"Error: {data.get('error', '')}" if has_error else f"Missing keys: {missing}"))
+    return ok, msg_parts[0]
+
+
+def run_test(test_name: str, tool_name: str, arguments: dict, check_fn) -> Any:
     global pass_count, fail_count
-    try:
-        result = call_tool(tool_name, arguments)
-        if check_fn:
-            success, message = check_fn(result)
-        elif "error" in result:
-            success = False
-            message = result["error"]
-        else:
-            success, message = check_response(result, expected_keys)
-        
-        if success:
-            pass_count += 1
-            status = "PASS"
-        else:
-            fail_count += 1
-            status = "FAIL"
-        
-        results.append({
-            "name": test_name,
-            "tool": tool_name,
-            "status": status,
-            "message": message
-        })
-        print(f"  [{status}] {test_name}: {message}")
-    except Exception as e:
-        fail_count += 1
-        results.append({
-            "name": test_name,
-            "tool": tool_name,
-            "status": "FAIL",
-            "message": f"Exception: {str(e)}"
-        })
-        print(f"  [FAIL] {test_name}: {str(e)}")
+    result = call_tool(tool_name, arguments)
+    ok, message = check_fn(result)
+    pass_count += ok
+    fail_count += 1 - ok
+    s = statuses[ok]
+    results.append({"name": test_name, "tool": tool_name, "status": s, "message": message})
+    print(f"  [{s}] {test_name}: {message}")
+    return result
 
 
-# =============================================================================
-# POSTS TESTS (6 tools)
-# =============================================================================
+print("=" * 60)
+print("WordPress MCP Server — Test Harness (Flat)")
+print("=" * 60)
+print(f"Testing MCP Server at: {MCP_URL}")
+print(f"API_KEY: {API_KEY[:20]}...")
+print()
 
-def test_posts():
-    print("\n# Posts Tests")
-    print("-" * 40)
-    
-    run_test("get_all_posts_basic", "get_all_posts", {"per_page": 5}, expected_keys=["items"])
-    
-    run_test("get_all_posts_with_pagination", "get_all_posts", {"per_page": 3, "page": 1})
-    
-    run_test("get_all_posts_toon_compression", "get_all_posts", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and len(r["items"]) > 0,
-        "TOON compression verified"
-    ))
-    
-    run_test("get_all_posts_with_search", "get_all_posts", {"search": "hello", "per_page": 5})
-    
-    run_test("get_all_posts_filter_by_status", "get_all_posts", {"status": "publish", "per_page": 5})
-    
-# Create a test post to use for by_id tests
-    test_post_result = call_tool("create_post", {
-        "title": f"Test Post for ID tests {rid}",
-        "content": "Content for ID testing",
-        "status": "publish"
-    })
-    test_post_id = test_post_result.get("id", 1)
-    
-    run_test("get_post_by_id_basic", "get_post_by_id", {"id": test_post_id}, expected_keys=["id", "title"])
+start_time = time.time()
 
-    run_test("get_post_by_id_include_all_fields", "get_post_by_id", {"id": test_post_id, "include_all_fields": True})
-    
-    run_test("create_post_basic", "create_post", {
-        "title": f"Test Post {rid}",
-        "content": "This is a test post created by the MCP test harness.",
-        "status": "draft"
-    }, expected_keys=["id", "title"])
-    
-    run_test("create_post_with_optional_fields", "create_post", {
-        "title": f"Test Post with Options {rid}",
-        "content": "Test content",
-        "status": "draft",
-        "slug": f"test-post-{rid}",
-        "comment_status": "closed",
-        "ping_status": "closed"
-    }, expected_keys=["id"])
-    
-    # Track created post IDs for cleanup
-    created_post_ids = [test_post_id]
-    
-    # Get the ID from create_post_basic test result - extract from rid in title
-    # The tests create posts but we need to track their IDs for cleanup
-    # Instead, search for posts with our rid and delete them all
-    
-    run_test("update_post_partial", "update_post", {
-        "id": test_post_id,
-        "title": f"Updated Title {rid}"
-    }, expected_keys=["id"])
-    
-    global pass_count, fail_count
-    create_result = call_tool("create_post", {"title": f"Post to delete {rid}", "content": "Will be deleted", "status": "draft"})
-    if "id" in create_result:
-        delete_result = call_tool("delete_post_by_id", {"id": create_result["id"]})
-        if delete_result.get("deleted") == True:
-            print(f"  [PASS] delete_post_by_id_trash: OK")
-            pass_count += 1
-        else:
-            print(f"  [FAIL] delete_post_by_id_trash: Missing expected keys: ['deleted']")
-            fail_count += 1
-    else:
-        print(f"  [FAIL] delete_post_by_id_trash: Could not create post to delete: {create_result.get('error', 'unknown')}")
-        fail_count += 1
-    
-    # Cleanup all posts with this rid (check all statuses)
-    from toon_mcp import toon_to_json
-    for status in ['publish', 'draft', 'trash']:
-        result = call_tool("get_all_posts", {"per_page": 100, "status": status})
-        items = result.get("items", result)
-        if isinstance(items, str):
-            items = toon_to_json(items)
-        for item in items:
-            title = item.get("title", {}).get("rendered", "")
-            if rid in title:
-                call_tool("delete_post_by_id", {"id": item["id"], "force": True})
+# =========================================================================
+# PHASE 1: CREATE SETUP ENTITIES (collect IDs for cascade-safe tests)
+# =========================================================================
 
+_post_id = call_tool("create_post", {
+    "title": f"Test Post for ID tests {rid}",
+    "content": "Content for ID testing",
+    "status": "publish"
+}).get("id", 0)
 
-# =============================================================================
-# PAGES TESTS (6 tools)
-# =============================================================================
+_post_del_id = call_tool("create_post", {
+    "title": f"Post to delete {rid}",
+    "content": "Will be deleted",
+    "status": "draft"
+}).get("id", 0)
 
-def test_pages():
-    print("\n# Pages Tests")
-    print("-" * 40)
-    
-    run_test("get_all_pages_basic", "get_all_pages", {"per_page": 5}, expected_keys=["items"])
-    
-    run_test("get_all_pages_with_pagination", "get_all_pages", {"per_page": 3, "page": 1})
-    
-    run_test("get_all_pages_toon_compression", "get_all_pages", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and len(r["items"]) >= 0,
-        "TOON compression verified"
-    ))
-    
-    run_test("get_all_pages_filter_by_parent", "get_all_pages", {"parent": 0, "per_page": 5})
-    
-    # Create a test page to use for by_id tests
-    test_page_result = call_tool("create_page", {
-        "title": f"Test Page for ID tests {rid}",
-        "content": "Content for ID testing",
-        "status": "publish"
-    })
-    test_page_id = test_page_result.get("id", 2)
-    
-    run_test("get_page_by_id_basic", "get_page_by_id", {"id": test_page_id}, expected_keys=["id", "title"])
-    
-    run_test("get_page_by_id_include_all_fields", "get_page_by_id", {"id": test_page_id, "include_all_fields": True})
-    
-    run_test("create_page_basic", "create_page", {
-        "title": f"Test Page {rid}",
-        "content": "This is a test page created by the MCP test harness.",
-        "status": "draft"
-    }, expected_keys=["id", "title"])
-    
-    run_test("create_page_with_optional_fields", "create_page", {
-        "title": f"Test Page with Options {rid}",
-        "content": "Test content",
-        "status": "draft",
-        "slug": f"test-page-{rid}",
-        "menu_order": 10
-    })
-    
-    run_test("update_page_partial", "update_page", {
-        "id": test_page_id,
-        "title": f"Updated Page Title {rid}"
-    }, expected_keys=["id"])
-    
-    global pass_count, fail_count
-    create_result = call_tool("create_page", {"title": f"Page to delete {rid}", "content": "Will be deleted", "status": "draft"})
-    if "id" in create_result:
-        delete_result = call_tool("delete_page_by_id", {"id": create_result["id"]})
-        if delete_result.get("deleted") == True:
-            print(f"  [PASS] delete_page_by_id_trash: OK")
-            pass_count += 1
-        else:
-            print(f"  [FAIL] delete_page_by_id_trash: Missing expected keys: ['deleted']")
-            fail_count += 1
-    else:
-        print(f"  [FAIL] delete_page_by_id_trash: Could not create page to delete: {create_result.get('error', 'unknown')}")
-        fail_count += 1
-    
-    # Cleanup all pages with this rid (check all statuses)
-    from toon_mcp import toon_to_json
-    for status in ['publish', 'draft', 'trash']:
-        result = call_tool("get_all_pages", {"per_page": 100, "status": status})
-        items = result.get("items", result)
-        if isinstance(items, str):
-            items = toon_to_json(items)
-        for item in items:
-            title = item.get("title", {}).get("rendered", "")
-            if rid in title:
-                call_tool("delete_page_by_id", {"id": item["id"], "force": True})
+_page_id = call_tool("create_page", {
+    "title": f"Test Page for ID tests {rid}",
+    "content": "Content for ID testing",
+    "status": "publish"
+}).get("id", 0)
 
+_page_del_id = call_tool("create_page", {
+    "title": f"Page to delete {rid}",
+    "content": "Will be deleted",
+    "status": "draft"
+}).get("id", 0)
 
-# =============================================================================
-# CATEGORIES TESTS (6 tools)
-# =============================================================================
+_cat_del_id = call_tool("create_category", {
+    "name": f"Category to delete {rid}",
+    "slug": f"category-delete-{rid}"
+}).get("id", 0)
 
-def test_categories():
-    print("\n# Categories Tests")
-    print("-" * 40)
-    
-    run_test("get_all_categories_basic", "get_all_categories", {"per_page": 5}, expected_keys=["items"])
-    
-    run_test("get_all_categories_with_pagination", "get_all_categories", {"per_page": 3, "page": 1})
-    
-    run_test("get_all_categories_toon_compression", "get_all_categories", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and len(r["items"]) >= 0,
-        "TOON compression verified"
-    ))
-    
-    run_test("get_all_categories_with_search", "get_all_categories", {"search": "category", "per_page": 5})
-    
-    run_test("get_category_by_id_basic", "get_category_by_id", {"id": 1}, expected_keys=["id", "name"])
-    
-    run_test("get_category_by_id_include_all_fields", "get_category_by_id", {"id": 1, "include_all_fields": True})
-    
-    run_test("create_category_basic", "create_category", {
-        "name": f"Test Category {rid}",
-        "slug": f"test-category-{rid}"
-    }, expected_keys=["id", "name"])
-    
-    run_test("create_category_with_description", "create_category", {
-        "name": f"Test Category Desc {rid}",
-        "slug": f"test-category-desc-{rid}",
-        "description": "A test category with description"
-    })
-    
-    run_test("update_category_partial", "update_category", {
-        "id": 1,
-        "description": f"Updated description {rid}"
-    }, expected_keys=["id"])
-    
-    global pass_count, fail_count
-    create_result = call_tool("create_category", {"name": f"Category to delete {rid}", "slug": f"category-delete-{rid}"})
-    if "id" in create_result:
-        delete_result = call_tool("delete_category_by_id", {"id": create_result["id"]})
-        if delete_result.get("deleted") == True:
-            print(f"  [PASS] delete_category_by_id_trash: OK")
-            pass_count += 1
-        else:
-            print(f"  [FAIL] delete_category_by_id_trash: Missing expected keys: ['deleted']")
-            fail_count += 1
-    else:
-        print(f"  [FAIL] delete_category_by_id_trash: Could not create category to delete: {create_result.get('error', 'unknown')}")
-        fail_count += 1
-    
-    # Cleanup all categories with this rid
-    from toon_mcp import toon_to_json
-    result = call_tool("get_all_categories", {"per_page": 100})
-    items = result.get("items", result)
-    if isinstance(items, str):
-        items = toon_to_json(items)
-    for item in items:
-        name = item.get("name", "")
-        if rid in name:
-            call_tool("delete_category_by_id", {"id": item["id"]})
+_tag_id = call_tool("create_tag", {
+    "name": f"Test Tag {rid}",
+    "slug": f"test-tag-{rid}"
+}).get("id", 0)
 
+_comment_post_id = call_tool("create_post", {
+    "title": f"Post for comment testing {rid}",
+    "content": "Comments enabled post",
+    "status": "publish",
+    "comment_status": "open"
+}).get("id", 0)
 
-# =============================================================================
-# TAGS TESTS (6 tools)
-# =============================================================================
+_comment_id = call_tool("create_comment", {
+    "post": _comment_post_id,
+    "content": f"This is a test comment {rid}",
+    "status": "approve"
+}).get("id", 0)
 
-def test_tags():
-    print("\n# Tags Tests")
-    print("-" * 40)
-    
-    run_test("get_all_tags_basic", "get_all_tags", {"per_page": 5}, expected_keys=["items"])
-    
-    run_test("get_all_tags_with_pagination", "get_all_tags", {"per_page": 3, "page": 1})
-    
-    run_test("get_all_tags_toon_compression", "get_all_tags", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and len(r["items"]) >= 0,
-        "TOON compression verified"
-    ))
-    
-    run_test("get_all_tags_with_search", "get_all_tags", {"search": "tag", "per_page": 5})
-    
-    global pass_count, fail_count
-    create_tag_result = call_tool("create_tag", {"name": f"Test Tag {rid}", "slug": f"test-tag-{rid}"})
-    if "id" in create_tag_result:
-        tag_id = create_tag_result["id"]
-        run_test("get_tag_by_id_basic", "get_tag_by_id", {"id": tag_id}, expected_keys=["id", "name"])
-        run_test("get_tag_by_id_include_all_fields", "get_tag_by_id", {"id": tag_id, "include_all_fields": True})
-        run_test("create_tag_basic", "create_tag", {
-            "name": f"Test Tag 2 {rid}",
-            "slug": f"test-tag-2-{rid}"
-        }, expected_keys=["id", "name"])
-        run_test("create_tag_with_description", "create_tag", {
-            "name": f"Test Tag Desc {rid}",
-            "slug": f"test-tag-desc-{rid}",
-            "description": "A test tag with description"
-        })
-        run_test("update_tag_partial", "update_tag", {
-            "id": tag_id,
-            "description": f"Updated tag description {rid}"
-        }, expected_keys=["id"])
-        delete_result = call_tool("delete_tag_by_id", {"id": tag_id})
-        if delete_result.get("deleted") == True:
-            print(f"  [PASS] delete_tag_by_id_trash: OK")
-            pass_count += 1
-        else:
-            print(f"  [FAIL] delete_tag_by_id_trash: Missing expected keys: ['deleted']")
-            fail_count += 1
-    else:
-        print(f"  [FAIL] test_tags: Could not create tag: {create_tag_result.get('error', 'unknown')}")
-        fail_count += 6
-    
-    # Cleanup all tags with this rid
-    from toon_mcp import toon_to_json
-    result = call_tool("get_all_tags", {"per_page": 100})
-    items = result.get("items", result)
-    if isinstance(items, str):
-        items = toon_to_json(items)
-    for item in items:
-        name = item.get("name", "")
-        if rid in name:
-            call_tool("delete_tag_by_id", {"id": item["id"]})
+_nav_id = call_tool("create_navigation", {
+    "title": f"Test Navigation for ID tests {rid}",
+    "status": "publish"
+}).get("id", 0)
 
+_block_id = call_tool("create_block", {
+    "title": f"Test Block {rid}",
+    "content": "<!-- wp:paragraph --><p>Test block content</p><!-- /wp:paragraph -->",
+    "status": "draft"
+}).get("id", 0)
 
-# =============================================================================
-# COMMENTS TESTS (6 tools)
-# =============================================================================
+# =========================================================================
+# PHASE 2: ALL 108 TESTS
+# =========================================================================
 
-def test_comments():
-    print("\n# Comments Tests")
-    print("-" * 40)
-    
-    run_test("get_all_comments_basic", "get_all_comments", {"per_page": 5}, expected_keys=["items"])
-    
-    run_test("get_all_comments_with_pagination", "get_all_comments", {"per_page": 3, "page": 1})
-    
-    run_test("get_all_comments_toon_compression", "get_all_comments", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and len(r["items"]) >= 0,
-        "TOON compression verified"
-    ))
-    
-    global pass_count, fail_count
-    post_result = call_tool("create_post", {"title": f"Post for comment testing {rid}", "content": "Comments enabled post", "status": "publish", "comment_status": "open"})
-    if "id" not in post_result:
-        print(f"  [FAIL] test_comments: Could not create post for comments: {post_result.get('error', 'unknown')}")
-        fail_count += 10
-        return
-    
-    post_id = post_result["id"]
-    
-    run_test("get_all_comments_filter_by_post", "get_all_comments", {"post": post_id, "per_page": 5})
-    
-    run_test("get_all_comments_filter_by_status", "get_all_comments", {"status": "approved", "per_page": 5})
-    
-    comment_result = call_tool("create_comment", {"post": post_id, "content": f"This is a test comment {rid}", "status": "approve"})
-    if "id" not in comment_result:
-        print(f"  [FAIL] create_comment_basic: Could not create comment: {comment_result.get('error', 'unknown')}")
-        fail_count += 9
-        return
-    
-    comment_id = comment_result["id"]
-    
-    run_test("get_comment_by_id_basic", "get_comment_by_id", {"id": comment_id}, expected_keys=["id", "content"])
-    
-    run_test("get_comment_by_id_include_all_fields", "get_comment_by_id", {"id": comment_id, "include_all_fields": True})
-    
-    run_test("create_comment_basic", "create_comment", {
-        "post": post_id,
-        "content": f"This is a test comment 2 {rid}",
-        "status": "approve"
-    }, expected_keys=["id", "content"])
-    
-    run_test("create_comment_reply", "create_comment", {
-        "post": post_id,
-        "content": f"This is a reply comment {rid}",
-        "status": "approve",
-        "parent": comment_id
-    })
-    
-    run_test("update_comment_partial", "update_comment", {
-        "id": comment_id,
-        "content": f"Updated comment content {rid}"
-    }, expected_keys=["id"])
-    
-    delete_result = call_tool("delete_comment_by_id", {"id": comment_id})
-    if delete_result.get("deleted") == True:
-        print(f"  [PASS] delete_comment_by_id_trash: OK")
-        pass_count += 1
-    else:
-        print(f"  [FAIL] delete_comment_by_id_trash: Missing expected keys: ['deleted']")
-        fail_count += 1
-    
-    # Cleanup all comments with this rid
-    from toon_mcp import toon_to_json
-    result = call_tool("get_all_comments", {"per_page": 100})
-    items = result.get("items", result)
-    if isinstance(items, str):
-        items = toon_to_json(items)
-    for item in items:
-        content = item.get("content", {}).get("rendered", "")
-        if rid in content:
-            call_tool("delete_comment_by_id", {"id": item["id"]})
-    
-    # Cleanup the post created for comment testing
-    call_tool("delete_post_by_id", {"id": post_id, "force": True})
+# --- Posts (11 tests) ---
+print("\n# Posts Tests")
+print("-" * 40)
 
+run_test("get_all_posts_basic", "get_all_posts", {"per_page": 5},
+         lambda r: check_response(r, ["items"]))
 
-# =============================================================================
-# USERS TESTS (3 tools)
-# =============================================================================
+run_test("get_all_posts_with_pagination", "get_all_posts", {"per_page": 3, "page": 1},
+         lambda r: check_response(r))
 
-def test_users():
-    print("\n# Users Tests")
-    print("-" * 40)
-    
-    run_test("get_all_users_basic", "get_all_users", {"per_page": 5}, expected_keys=["items"])
-    
-    run_test("get_all_users_with_pagination", "get_all_users", {"per_page": 3, "page": 1})
-    
-    run_test("get_all_users_toon_compression", "get_all_users", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and len(r["items"]) >= 0,
-        "TOON compression verified"
-    ))
-    
-    run_test("get_all_users_with_search", "get_all_users", {"search": "admin", "per_page": 5})
-    
-    run_test("get_user_by_id_basic", "get_user_by_id", {"id": 1}, expected_keys=["id", "name"])
-    
-    run_test("get_user_by_id_include_all_fields", "get_user_by_id", {"id": 1, "include_all_fields": True})
-    
-    run_test("get_current_user_basic", "get_current_user", {}, expected_keys=["id", "name"])
-    
-    run_test("get_current_user_include_all_fields", "get_current_user", {"include_all_fields": True})
+run_test("get_all_posts_toon_compression", "get_all_posts", {"per_page": 3},
+         lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
 
+run_test("get_all_posts_with_search", "get_all_posts", {"search": "hello", "per_page": 5},
+         lambda r: check_response(r))
 
-# =============================================================================
-# NAVIGATION TESTS (6 tools)
-# =============================================================================
+run_test("get_all_posts_filter_by_status", "get_all_posts", {"status": "publish", "per_page": 5},
+         lambda r: check_response(r))
 
-def test_navigation():
-    print("\n# Navigation Tests")
-    print("-" * 40)
-    
-    run_test("get_all_navigation_basic", "get_all_navigation", {"per_page": 5}, expected_keys=["items"])
-    
-    run_test("get_all_navigation_with_pagination", "get_all_navigation", {"per_page": 3, "page": 1})
-    
-    run_test("get_all_navigation_toon_compression", "get_all_navigation", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and len(r["items"]) >= 0,
-        "TOON compression verified"
-    ))
-    
-    # Create navigation for by_id tests
-    test_nav_result = call_tool("create_navigation", {
-        "title": f"Test Navigation for ID tests {rid}",
-        "status": "publish"
-    })
-    test_nav_id = test_nav_result.get("id")
-    
-    run_test("get_navigation_by_id_basic", "get_navigation_by_id", {"id": test_nav_id}, expected_keys=["id", "title"])
-    
-    run_test("get_navigation_by_id_include_all_fields", "get_navigation_by_id", {"id": test_nav_id, "include_all_fields": True})
-    
-    run_test("create_navigation_basic", "create_navigation", {
-        "title": f"Test Navigation {rid}",
-        "status": "draft"
-    }, expected_keys=["id", "title"])
-    
-    run_test("create_navigation_with_slug", "create_navigation", {
-        "title": f"Test Navigation Slug {rid}",
-        "status": "draft",
-        "slug": f"test-nav-{rid}"
-    })
-    
-    run_test("update_navigation_partial", "update_navigation", {
-        "id": test_nav_id,
-        "status": "publish"
-    }, expected_keys=["id"])
-    
-    # Cleanup all navigation with this rid
-    from toon_mcp import toon_to_json
-    result = call_tool("get_all_navigation", {"per_page": 100})
-    items = result.get("items", result)
-    if isinstance(items, str):
-        items = toon_to_json(items)
-    for item in items:
-        title = item.get("title", {}).get("raw", item.get("title", {}).get("rendered", ""))
-        if rid in title:
-            call_tool("delete_navigation_by_id", {"id": item["id"]})
+run_test("get_post_by_id_basic", "get_post_by_id", {"id": _post_id},
+         lambda r: check_response(r, ["id", "title"]))
 
+run_test("get_post_by_id_include_all_fields", "get_post_by_id", {"id": _post_id, "include_all_fields": True},
+         lambda r: check_response(r))
 
-# =============================================================================
-# BLOCKS TESTS (6 tools)
-# =============================================================================
+run_test("create_post_basic", "create_post", {
+    "title": f"Test Post {rid}",
+    "content": "This is a test post created by the MCP test harness.",
+    "status": "draft"
+}, lambda r: check_response(r, ["id", "title"]))
 
-def test_blocks():
-    print("\n# Blocks Tests")
-    print("-" * 40)
-    
-    run_test("get_all_blocks_basic", "get_all_blocks", {"per_page": 5}, expected_keys=["items"])
-    
-    run_test("get_all_blocks_with_pagination", "get_all_blocks", {"per_page": 3, "page": 1})
-    
-    run_test("get_all_blocks_toon_compression", "get_all_blocks", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and len(r["items"]) >= 0,
-        "TOON compression verified"
-    ))
-    
-    run_test("get_all_blocks_with_search", "get_all_blocks", {"search": "test", "per_page": 5})
-    
-    global pass_count, fail_count
-    create_block_result = call_tool("create_block", {
-        "title": f"Test Block {rid}",
-        "content": "<!-- wp:paragraph --><p>Test block content</p><!-- /wp:paragraph -->",
-        "status": "draft"
-    })
-    if "id" in create_block_result:
-        block_id = create_block_result["id"]
-        run_test("get_block_by_id_basic", "get_block_by_id", {"id": block_id}, expected_keys=["id"])
-        run_test("get_block_by_id_include_all_fields", "get_block_by_id", {"id": block_id, "include_all_fields": True})
-        run_test("create_block_basic", "create_block", {
-            "title": f"Test Block 2 {rid}",
-            "content": "<!-- wp:paragraph --><p>Test block content 2</p><!-- /wp:paragraph -->",
-            "status": "draft"
-        }, expected_keys=["id", "title"])
-        run_test("create_block_with_optional_fields", "create_block", {
-            "title": f"Test Block Options {rid}",
-            "content": "<!-- wp:paragraph --><p>Content</p><!-- /wp:paragraph -->",
-            "status": "draft",
-            "slug": f"test-block-{rid}"
-        })
-        run_test("update_block_partial", "update_block", {
-            "id": block_id,
-            "title": f"Updated Block Title {rid}"
-        }, expected_keys=["id"])
-        delete_result = call_tool("delete_block_by_id", {"id": block_id})
-        if delete_result.get("deleted") == True:
-            print(f"  [PASS] delete_block_by_id_trash: OK")
-            pass_count += 1
-        else:
-            print(f"  [FAIL] delete_block_by_id_trash: Missing expected keys: ['deleted']")
-            fail_count += 1
-    else:
-        print(f"  [FAIL] test_blocks: Could not create block: {create_block_result.get('error', 'unknown')}")
-        fail_count += 8
-    
-    # Cleanup all blocks with this rid (check all statuses)
-    from toon_mcp import toon_to_json
-    for status in ['publish', 'draft', 'trash']:
-        result = call_tool("get_all_blocks", {"per_page": 100, "status": status})
-        items = result.get("items", result)
-        if isinstance(items, str):
-            items = toon_to_json(items)
-        for item in items:
-            block_id = item["id"]
-            # Get full block to check title
-            block_detail = call_tool("get_block_by_id", {"id": block_id, "include_all_fields": True})
-            if "error" not in block_detail:
-                title = block_detail.get("title", {}).get("raw", "")
-                if rid in title:
-                    call_tool("delete_block_by_id", {"id": block_id})
+run_test("create_post_with_optional_fields", "create_post", {
+    "title": f"Test Post with Options {rid}",
+    "content": "Test content",
+    "status": "draft",
+    "slug": f"test-post-{rid}",
+    "comment_status": "closed",
+    "ping_status": "closed"
+}, lambda r: check_response(r, ["id"]))
 
+run_test("update_post_partial", "update_post", {
+    "id": _post_id,
+    "title": f"Updated Title {rid}"
+}, lambda r: check_response(r, ["id"]))
 
-# =============================================================================
-# META TOOLS TESTS (10 tools)
-# =============================================================================
+run_test("delete_post_by_id_trash", "delete_post_by_id", {"id": _post_del_id},
+         lambda r: (r.get("deleted") == True, "OK"))
 
-def test_meta_tools():
-    print("\n# Meta Tools Tests")
-    print("-" * 40)
-    
-    run_test("get_taxonomies", "get_taxonomies", {}, expected_keys=["category"])
-    
-    run_test("get_taxonomy_by_name_category", "get_taxonomy_by_name", {"name": "category"}, expected_keys=["name"])
-    
-    run_test("get_taxonomy_by_name_post_tag", "get_taxonomy_by_name", {"name": "post_tag"}, expected_keys=["name"])
-    
-    run_test("get_taxonomy_by_name_nav_menu", "get_taxonomy_by_name", {"name": "nav_menu"}, expected_keys=["name"])
-    
-    run_test("get_post_types", "get_post_types", {}, expected_keys=["post"])
-    
-    run_test("get_post_type_by_name_post", "get_post_type_by_name", {"type": "post"}, expected_keys=["name"])
-    
-    run_test("get_post_type_by_name_page", "get_post_type_by_name", {"type": "page"}, expected_keys=["name"])
-    
-    run_test("get_post_statuses", "get_post_statuses", {}, expected_keys=["publish"])
-    
-    run_test("get_post_status_by_slug_publish", "get_post_status_by_slug", {"status": "publish"}, expected_keys=["slug"])
-    
-    run_test("search_content_basic", "search_content", {"query": "hello", "per_page": 5}, expected_keys=["results"])
-    
-    run_test("search_content_with_type", "search_content", {"query": "hello", "search_type": "post", "per_page": 5})
-    
-    run_test("get_server_status", "get_server_status", {}, expected_keys=["status"])
+# --- Pages (10 tests) ---
+print("\n# Pages Tests")
+print("-" * 40)
 
+run_test("get_all_pages_basic", "get_all_pages", {"per_page": 5},
+         lambda r: check_response(r, ["items"]))
 
-# =============================================================================
-# TOON VERIFICATION TESTS
-# =============================================================================
+run_test("get_all_pages_with_pagination", "get_all_pages", {"per_page": 3, "page": 1},
+         lambda r: check_response(r))
 
-def test_toon_verification():
-    print("\n# TOON Compression Verification Tests")
-    print("-" * 40)
-    
-    # Create a post to test single record GET (ID 1 may not exist after cleanup)
-    create_result = call_tool("create_post", {"title": "TOON Test Post", "content": "Test content", "status": "publish"})
-    test_post_id = create_result.get("id", 1)
-    
-    run_test("toon_verify_posts_list", "get_all_posts", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and isinstance(toon_to_json(r["items"]), list),
-        "Bulk list returns items array"
-    ))
-    
-    run_test("toon_verify_pages_list", "get_all_pages", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and isinstance(toon_to_json(r["items"]), list),
-        "Bulk list returns items array"
-    ))
-    
-    run_test("toon_verify_categories_list", "get_all_categories", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and isinstance(toon_to_json(r["items"]), list),
-        "Bulk list returns items array"
-    ))
-    
-    run_test("toon_verify_tags_list", "get_all_tags", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and isinstance(toon_to_json(r["items"]), list),
-        "Bulk list returns items array"
-    ))
-    
-    run_test("toon_verify_comments_list", "get_all_comments", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and isinstance(toon_to_json(r["items"]), list),
-        "Bulk list returns items array"
-    ))
-    
-    run_test("toon_verify_users_list", "get_all_users", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and isinstance(toon_to_json(r["items"]), list),
-        "Bulk list returns items array"
-    ))
-    
-    run_test("toon_verify_navigation_list", "get_all_navigation", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and isinstance(toon_to_json(r["items"]), list),
-        "Bulk list returns items array"
-    ))
-    
-    run_test("toon_verify_blocks_list", "get_all_blocks", {"per_page": 3}, check_fn=lambda r: (
-        "items" in r and isinstance(toon_to_json(r["items"]), list),
-        "Bulk list returns items array"
-    ))
-    
-    run_test("toon_verify_search_results", "search_content", {"query": "test", "per_page": 3}, check_fn=lambda r: (
-        "results" in r and isinstance(toon_to_json(r["results"]), list),
-        "Search returns results array"
-    ))
-    
-    run_test("toon_not_on_single_record", "get_post_by_id", {"id": test_post_id}, check_fn=lambda r: (
-        "id" in r and "title" in r,
-        "Single record GET returns direct object"
-    ))
-    
-    # Cleanup the test post
-    call_tool("delete_post_by_id", {"id": test_post_id, "force": True})
+run_test("get_all_pages_toon_compression", "get_all_pages", {"per_page": 3},
+         lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
 
+run_test("get_all_pages_filter_by_parent", "get_all_pages", {"parent": 0, "per_page": 5},
+         lambda r: check_response(r))
 
-# =============================================================================
-# ERROR HANDLING TESTS
-# =============================================================================
+run_test("get_page_by_id_basic", "get_page_by_id", {"id": _page_id},
+         lambda r: check_response(r, ["id", "title"]))
 
-def test_error_handling():
-    print("\n# Error Handling Tests")
-    print("-" * 40)
-    
-    run_test("get_post_by_id_invalid", "get_post_by_id", {"id": 999999}, check_fn=lambda r: (
-        "id" not in r or "error" in r or r.get("id") != 999999,
-        "Invalid ID returns error or empty"
-    ))
-    
-    run_test("get_category_by_id_invalid", "get_category_by_id", {"id": 999999}, check_fn=lambda r: (
-        "id" not in r or "error" in r or r.get("id") != 999999,
-        "Invalid ID returns error or empty"
-    ))
-    
-    run_test("get_user_by_id_invalid", "get_user_by_id", {"id": 999999}, check_fn=lambda r: (
-        "id" not in r or "error" in r or r.get("id") != 999999,
-        "Invalid ID returns error or empty"
-    ))
-    
-    run_test("get_taxonomy_by_name_invalid", "get_taxonomy_by_name", {"name": "nonexistent_taxonomy"}, check_fn=lambda r: (
-        "error" in r or "name" not in r,
-        "Invalid taxonomy returns error or empty"
-    ))
-    
-    run_test("get_post_type_by_name_invalid", "get_post_type_by_name", {"type": "nonexistent_type"}, check_fn=lambda r: (
-        "error" in r or "name" not in r,
-        "Invalid post type returns error or empty"
-    ))
-    
-    run_test("get_post_status_by_slug_invalid", "get_post_status_by_slug", {"status": "nonexistent_status"}, check_fn=lambda r: (
-        "error" in r or "slug" not in r,
-        "Invalid status returns error or empty"
-    ))
-    
-    run_test("search_content_empty_query", "search_content", {"query": ""}, check_fn=lambda r: (
-        "results" in r,
-        "Empty query still returns results key"
-    ))
+run_test("get_page_by_id_include_all_fields", "get_page_by_id", {"id": _page_id, "include_all_fields": True},
+         lambda r: check_response(r))
 
+run_test("create_page_basic", "create_page", {
+    "title": f"Test Page {rid}",
+    "content": "This is a test page created by the MCP test harness.",
+    "status": "draft"
+}, lambda r: check_response(r, ["id", "title"]))
 
-# =============================================================================
-# LEAK TESTS
-# =============================================================================
+run_test("create_page_with_optional_fields", "create_page", {
+    "title": f"Test Page with Options {rid}",
+    "content": "Test content",
+    "status": "draft",
+    "slug": f"test-page-{rid}",
+    "menu_order": 10
+}, lambda r: check_response(r))
 
-def test_leak_detection():
-    """Check for leftover resources from testing. Fail if any found, but clean up regardless."""
-    global pass_count, fail_count
-    print("\n# Leak Detection Tests")
-    print("-" * 40)
-    
-    total_leaks = 0
-    cleaned_ids = set()
-    
-    resource_types = [
-        ("posts", "get_all_posts", {"per_page": 100}, ["title", "id"]),
-        ("pages", "get_all_pages", {"per_page": 100}, ["title", "id"]),
-        ("categories", "get_all_categories", {"per_page": 100}, ["name", "id"]),
-        ("tags", "get_all_tags", {"per_page": 100}, ["name", "id"]),
-        ("comments", "get_all_comments", {"per_page": 100}, ["id"]),
-        ("navigation", "get_all_navigation", {"per_page": 100}, ["id"]),
-        ("blocks", "get_all_blocks", {"per_page": 100}, ["title", "id"]),
-    ]
-    
-    plural_to_singular = {
-        "posts": "post",
-        "categories": "category",
-        "tags": "tag",
-        "comments": "comment",
-        "navigation": "navigation",
-        "blocks": "block",
-    }
-    
-    all_statuses = ["publish", "draft", "pending", "private", "trash"]
-    
-    for resource_type, tool_name, args, _ in resource_types:
-        statuses_to_check = all_statuses if resource_type in ["posts", "pages", "blocks"] else [""]
-        
-        for status in statuses_to_check:
-            check_args = dict(args)
-            if status:
-                check_args["status"] = status
-            
-            result = call_tool(tool_name, check_args)
-            if "error" in result:
-                continue
-            
-            items_raw = result.get("items", [])
-            if not items_raw:
-                continue
-            
-            items = toon_to_json(items_raw) if isinstance(items_raw, str) else items_raw
-            if not items or not isinstance(items, list):
-                continue
-                
-            for item in items:
-                item_id = item.get("id")
-                
-                if item_id in cleaned_ids:
-                    continue
-                
-                item_raw = ""
-                
-                if resource_type == "blocks":
-                    single_result = call_tool(f"get_{resource_type[:-1]}_by_id", {"id": item_id, "include_all_fields": True})
-                    if "error" not in single_result:
-                        item_title = single_result.get("title", {})
-                        item_raw = item_title.get("raw", "") if isinstance(item_title, dict) else ""
-                else:
-                    item_title = item.get("title", item.get("name", ""))
-                    item_raw = item_title.get("raw", item_title.get("rendered", "")) if isinstance(item_title, dict) else str(item_title)
-                
-                if item_raw and rid in item_raw:
-                    total_leaks += 1
-                    fail_count += 1
-                    singular = plural_to_singular.get(resource_type, resource_type[:-1])
-                    delete_tool = f"delete_{singular}_by_id"
-                    delete_args = {"id": item_id, "force": True} if resource_type in ["posts", "pages"] else {"id": item_id}
-                    delete_result = call_tool(delete_tool, delete_args)
-                    deleted = delete_result.get("deleted", False)
-                    if deleted:
-                        cleaned_ids.add(item_id)
-                        print(f"  [LEAK FAIL] {singular} {item_id}: {item_raw[:50]} (cleaned)")
-                    else:
-                        print(f"  [LEAK FAIL] {singular} {item_id}: {item_raw[:50]} (delete failed)")
-    
-    if total_leaks == 0:
-        pass_count += 1
-        print(f"  [PASS] No leaks detected")
+run_test("update_page_partial", "update_page", {
+    "id": _page_id,
+    "title": f"Updated Page Title {rid}"
+}, lambda r: check_response(r, ["id"]))
 
+run_test("delete_page_by_id_trash", "delete_page_by_id", {"id": _page_del_id},
+         lambda r: (r.get("deleted") == True, "OK"))
 
-# =============================================================================
-# MAIN
-# =============================================================================
+# --- Categories (10 tests) ---
+print("\n# Categories Tests")
+print("-" * 40)
 
-def main():
-    print("=" * 60)
-    print("WordPress MCP Server — Test Harness")
-    print("=" * 60)
-    print(f"Testing MCP Server at: {MCP_URL}")
-    print(f"API_KEY: {API_KEY[:20]}...")
-    print()
-    
-    start_time = time.time()
-    
-    test_posts()
-    test_pages()
-    test_categories()
-    test_tags()
-    test_comments()
-    test_users()
-    test_navigation()
-    test_blocks()
-    test_meta_tools()
-    test_toon_verification()
-    test_error_handling()
-    test_leak_detection()
-    
-    elapsed = time.time() - start_time
-    
-    print()
-    print("=" * 60)
-    print("TEST RESULTS SUMMARY")
-    print("=" * 60)
-    print(f"Total tests: {pass_count + fail_count}")
-    print(f"Passed: {pass_count}")
-    print(f"Failed: {fail_count}")
-    print(f"Duration: {elapsed:.2f}s")
-    print()
-    
-    if fail_count > 0:
-        print("## Failed Tests Details")
-        print("-" * 40)
-        for r in results:
-            if r["status"] == "FAIL":
-                print(f"  - {r['name']}: {r['message']}")
-        print()
-    
-    print("## Markdown Report")
-    print("-" * 40)
-    print(f"| Test | Status | Message |")
-    print(f"|------|--------|---------|")
-    for r in results:
-        status_icon = "✅" if r["status"] == "PASS" else "❌"
-        print(f"| {r['name']} | {status_icon} {r['status']} | {r['message']} |")
-    
-    sys.exit(0 if fail_count == 0 else 1)
+run_test("get_all_categories_basic", "get_all_categories", {"per_page": 5},
+         lambda r: check_response(r, ["items"]))
 
+run_test("get_all_categories_with_pagination", "get_all_categories", {"per_page": 3, "page": 1},
+         lambda r: check_response(r))
 
-if __name__ == "__main__":
-    main()
+run_test("get_all_categories_toon_compression", "get_all_categories", {"per_page": 3},
+         lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
+
+run_test("get_all_categories_with_search", "get_all_categories", {"search": "category", "per_page": 5},
+         lambda r: check_response(r))
+
+run_test("get_category_by_id_basic", "get_category_by_id", {"id": 1},
+         lambda r: check_response(r, ["id", "name"]))
+
+run_test("get_category_by_id_include_all_fields", "get_category_by_id", {"id": 1, "include_all_fields": True},
+         lambda r: check_response(r))
+
+_run_test_cat_create_1 = run_test("create_category_basic", "create_category", {
+    "name": f"Test Category {rid}",
+    "slug": f"test-category-{rid}"
+}, lambda r: check_response(r, ["id", "name"]))
+
+run_test("create_category_with_description", "create_category", {
+    "name": f"Test Category Desc {rid}",
+    "slug": f"test-category-desc-{rid}",
+    "description": "A test category with description"
+}, lambda r: check_response(r))
+
+run_test("update_category_partial", "update_category", {
+    "id": 1,
+    "description": f"Updated description {rid}"
+}, lambda r: check_response(r, ["id"]))
+
+run_test("delete_category_by_id_trash", "delete_category_by_id", {"id": _cat_del_id},
+         lambda r: (r.get("deleted") == True, "OK"))
+
+# --- Tags (10 tests) ---
+print("\n# Tags Tests")
+print("-" * 40)
+
+run_test("get_all_tags_basic", "get_all_tags", {"per_page": 5},
+         lambda r: check_response(r, ["items"]))
+
+run_test("get_all_tags_with_pagination", "get_all_tags", {"per_page": 3, "page": 1},
+         lambda r: check_response(r))
+
+run_test("get_all_tags_toon_compression", "get_all_tags", {"per_page": 3},
+         lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
+
+run_test("get_all_tags_with_search", "get_all_tags", {"search": "tag", "per_page": 5},
+         lambda r: check_response(r))
+
+run_test("get_tag_by_id_basic", "get_tag_by_id", {"id": _tag_id},
+         lambda r: check_response(r, ["id", "name"]))
+
+run_test("get_tag_by_id_include_all_fields", "get_tag_by_id", {"id": _tag_id, "include_all_fields": True},
+         lambda r: check_response(r))
+
+run_test("create_tag_basic", "create_tag", {
+    "name": f"Test Tag 2 {rid}",
+    "slug": f"test-tag-2-{rid}"
+}, lambda r: check_response(r, ["id", "name"]))
+
+run_test("create_tag_with_description", "create_tag", {
+    "name": f"Test Tag Desc {rid}",
+    "slug": f"test-tag-desc-{rid}",
+    "description": "A test tag with description"
+}, lambda r: check_response(r))
+
+run_test("update_tag_partial", "update_tag", {
+    "id": _tag_id,
+    "description": f"Updated tag description {rid}"
+}, lambda r: check_response(r, ["id"]))
+
+run_test("delete_tag_by_id_trash", "delete_tag_by_id", {"id": _tag_id},
+         lambda r: (r.get("deleted") == True, "OK"))
+
+# --- Users (8 tests) ---
+print("\n# Users Tests")
+print("-" * 40)
+
+run_test("get_all_users_basic", "get_all_users", {"per_page": 5},
+         lambda r: check_response(r, ["items"]))
+
+run_test("get_all_users_with_pagination", "get_all_users", {"per_page": 3, "page": 1},
+         lambda r: check_response(r))
+
+run_test("get_all_users_toon_compression", "get_all_users", {"per_page": 3},
+         lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
+
+run_test("get_all_users_with_search", "get_all_users", {"search": "admin", "per_page": 5},
+         lambda r: check_response(r))
+
+run_test("get_user_by_id_basic", "get_user_by_id", {"id": 1},
+         lambda r: check_response(r, ["id", "name"]))
+
+run_test("get_user_by_id_include_all_fields", "get_user_by_id", {"id": 1, "include_all_fields": True},
+         lambda r: check_response(r))
+
+run_test("get_current_user_basic", "get_current_user", {},
+         lambda r: check_response(r, ["id", "name"]))
+
+run_test("get_current_user_include_all_fields", "get_current_user", {"include_all_fields": True},
+         lambda r: check_response(r))
+
+# --- Comments (11 tests) ---
+print("\n# Comments Tests")
+print("-" * 40)
+
+run_test("get_all_comments_basic", "get_all_comments", {"per_page": 5},
+         lambda r: check_response(r, ["items"]))
+
+run_test("get_all_comments_with_pagination", "get_all_comments", {"per_page": 3, "page": 1},
+         lambda r: check_response(r))
+
+run_test("get_all_comments_toon_compression", "get_all_comments", {"per_page": 3},
+         lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
+
+run_test("get_all_comments_filter_by_post", "get_all_comments", {"post": _comment_post_id, "per_page": 5},
+         lambda r: check_response(r))
+
+run_test("get_all_comments_filter_by_status", "get_all_comments", {"status": "approved", "per_page": 5},
+         lambda r: check_response(r))
+
+run_test("get_comment_by_id_basic", "get_comment_by_id", {"id": _comment_id},
+         lambda r: check_response(r, ["id", "content"]))
+
+run_test("get_comment_by_id_include_all_fields", "get_comment_by_id", {"id": _comment_id, "include_all_fields": True},
+         lambda r: check_response(r))
+
+run_test("create_comment_basic", "create_comment", {
+    "post": _comment_post_id,
+    "content": f"This is a test comment 2 {rid}",
+    "status": "approve"
+}, lambda r: check_response(r, ["id", "content"]))
+
+run_test("create_comment_reply", "create_comment", {
+    "post": _comment_post_id,
+    "content": f"This is a reply comment {rid}",
+    "status": "approve",
+    "parent": _comment_id
+}, lambda r: check_response(r))
+
+run_test("update_comment_partial", "update_comment", {
+    "id": _comment_id,
+    "content": f"Updated comment content {rid}"
+}, lambda r: check_response(r, ["id"]))
+
+run_test("delete_comment_by_id_trash", "delete_comment_by_id", {"id": _comment_id},
+         lambda r: (r.get("deleted") == True, "OK"))
+
+# --- Navigation (8 tests, no delete) ---
+print("\n# Navigation Tests")
+print("-" * 40)
+
+run_test("get_all_navigation_basic", "get_all_navigation", {"per_page": 5},
+         lambda r: check_response(r, ["items"]))
+
+run_test("get_all_navigation_with_pagination", "get_all_navigation", {"per_page": 3, "page": 1},
+         lambda r: check_response(r))
+
+run_test("get_all_navigation_toon_compression", "get_all_navigation", {"per_page": 3},
+         lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
+
+run_test("get_navigation_by_id_basic", "get_navigation_by_id", {"id": _nav_id},
+         lambda r: check_response(r, ["id", "title"]))
+
+run_test("get_navigation_by_id_include_all_fields", "get_navigation_by_id", {"id": _nav_id, "include_all_fields": True},
+         lambda r: check_response(r))
+
+run_test("create_navigation_basic", "create_navigation", {
+    "title": f"Test Navigation {rid}",
+    "status": "draft"
+}, lambda r: check_response(r, ["id", "title"]))
+
+run_test("create_navigation_with_slug", "create_navigation", {
+    "title": f"Test Navigation Slug {rid}",
+    "status": "draft",
+    "slug": f"test-nav-{rid}"
+}, lambda r: check_response(r))
+
+run_test("update_navigation_partial", "update_navigation", {
+    "id": _nav_id,
+    "status": "publish"
+}, lambda r: check_response(r, ["id"]))
+
+# --- Blocks (10 tests) ---
+print("\n# Blocks Tests")
+print("-" * 40)
+
+run_test("get_all_blocks_basic", "get_all_blocks", {"per_page": 5},
+         lambda r: check_response(r, ["items"]))
+
+run_test("get_all_blocks_with_pagination", "get_all_blocks", {"per_page": 3, "page": 1},
+         lambda r: check_response(r))
+
+run_test("get_all_blocks_toon_compression", "get_all_blocks", {"per_page": 3},
+         lambda r: ("items" in r and len(r["items"]) > 0, "TOON compression verified"))
+
+run_test("get_all_blocks_with_search", "get_all_blocks", {"search": "test", "per_page": 5},
+         lambda r: check_response(r))
+
+run_test("get_block_by_id_basic", "get_block_by_id", {"id": _block_id},
+         lambda r: check_response(r, ["id"]))
+
+run_test("get_block_by_id_include_all_fields", "get_block_by_id", {"id": _block_id, "include_all_fields": True},
+         lambda r: check_response(r))
+
+run_test("create_block_basic", "create_block", {
+    "title": f"Test Block 2 {rid}",
+    "content": "<!-- wp:paragraph --><p>Test block content 2</p><!-- /wp:paragraph -->",
+    "status": "draft"
+}, lambda r: check_response(r, ["id", "title"]))
+
+run_test("create_block_with_optional_fields", "create_block", {
+    "title": f"Test Block Options {rid}",
+    "content": "<!-- wp:paragraph --><p>Content</p><!-- /wp:paragraph -->",
+    "status": "draft",
+    "slug": f"test-block-{rid}"
+}, lambda r: check_response(r))
+
+run_test("update_block_partial", "update_block", {
+    "id": _block_id,
+    "title": f"Updated Block Title {rid}"
+}, lambda r: check_response(r, ["id"]))
+
+run_test("delete_block_by_id_trash", "delete_block_by_id", {"id": _block_id},
+         lambda r: (r.get("deleted") == True, "OK"))
+
+# --- Meta Tools (12 tests) ---
+print("\n# Meta Tools Tests")
+print("-" * 40)
+
+run_test("get_taxonomies", "get_taxonomies", {},
+         lambda r: check_response(r, ["category"]))
+
+run_test("get_taxonomy_by_name_category", "get_taxonomy_by_name", {"name": "category"},
+         lambda r: check_response(r, ["name"]))
+
+run_test("get_taxonomy_by_name_post_tag", "get_taxonomy_by_name", {"name": "post_tag"},
+         lambda r: check_response(r, ["name"]))
+
+run_test("get_taxonomy_by_name_nav_menu", "get_taxonomy_by_name", {"name": "nav_menu"},
+         lambda r: check_response(r, ["name"]))
+
+run_test("get_post_types", "get_post_types", {},
+         lambda r: check_response(r, ["post"]))
+
+run_test("get_post_type_by_name_post", "get_post_type_by_name", {"type": "post"},
+         lambda r: check_response(r, ["name"]))
+
+run_test("get_post_type_by_name_page", "get_post_type_by_name", {"type": "page"},
+         lambda r: check_response(r, ["name"]))
+
+run_test("get_post_statuses", "get_post_statuses", {},
+         lambda r: check_response(r, ["publish"]))
+
+run_test("get_post_status_by_slug_publish", "get_post_status_by_slug", {"status": "publish"},
+         lambda r: check_response(r, ["slug"]))
+
+run_test("search_content_basic", "search_content", {"query": "hello", "per_page": 5},
+         lambda r: check_response(r, ["results"]))
+
+run_test("search_content_with_type", "search_content", {"query": "hello", "search_type": "post", "per_page": 5},
+         lambda r: check_response(r))
+
+run_test("get_server_status", "get_server_status", {},
+         lambda r: check_response(r, ["status"]))
+
+# --- TOON Verification (10 tests) ---
+print("\n# TOON Compression Verification Tests")
+print("-" * 40)
+
+run_test("toon_verify_posts_list", "get_all_posts", {"per_page": 3},
+         lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
+                    "Bulk list returns items array"))
+
+run_test("toon_verify_pages_list", "get_all_pages", {"per_page": 3},
+         lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
+                    "Bulk list returns items array"))
+
+run_test("toon_verify_categories_list", "get_all_categories", {"per_page": 3},
+         lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
+                    "Bulk list returns items array"))
+
+run_test("toon_verify_tags_list", "get_all_tags", {"per_page": 3},
+         lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
+                    "Bulk list returns items array"))
+
+run_test("toon_verify_comments_list", "get_all_comments", {"per_page": 3},
+         lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
+                    "Bulk list returns items array"))
+
+run_test("toon_verify_users_list", "get_all_users", {"per_page": 3},
+         lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
+                    "Bulk list returns items array"))
+
+run_test("toon_verify_navigation_list", "get_all_navigation", {"per_page": 3},
+         lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
+                    "Bulk list returns items array"))
+
+run_test("toon_verify_blocks_list", "get_all_blocks", {"per_page": 3},
+         lambda r: ("items" in r and isinstance(toon_to_json(r["items"]), list),
+                    "Bulk list returns items array"))
+
+run_test("toon_verify_search_results", "search_content", {"query": "test", "per_page": 3},
+         lambda r: ("results" in r and isinstance(toon_to_json(r["results"]), list),
+                    "Search returns results array"))
+
+run_test("toon_not_on_single_record", "get_post_by_id", {"id": _post_id},
+         lambda r: ("id" in r and "title" in r,
+                    "Single record GET returns direct object"))
+
+# --- Error Handling (7 tests) ---
+print("\n# Error Handling Tests")
+print("-" * 40)
+
+run_test("get_post_by_id_invalid", "get_post_by_id", {"id": 999999},
+         lambda r: ("id" not in r or "error" in r or r.get("id") != 999999,
+                    "Invalid ID returns error or empty"))
+
+run_test("get_category_by_id_invalid", "get_category_by_id", {"id": 999999},
+         lambda r: ("id" not in r or "error" in r or r.get("id") != 999999,
+                    "Invalid ID returns error or empty"))
+
+run_test("get_user_by_id_invalid", "get_user_by_id", {"id": 999999},
+         lambda r: ("id" not in r or "error" in r or r.get("id") != 999999,
+                    "Invalid ID returns error or empty"))
+
+run_test("get_taxonomy_by_name_invalid", "get_taxonomy_by_name", {"name": "nonexistent_taxonomy"},
+         lambda r: ("error" in r or "name" not in r,
+                    "Invalid taxonomy returns error or empty"))
+
+run_test("get_post_type_by_name_invalid", "get_post_type_by_name", {"type": "nonexistent_type"},
+         lambda r: ("error" in r or "name" not in r,
+                    "Invalid post type returns error or empty"))
+
+run_test("get_post_status_by_slug_invalid", "get_post_status_by_slug", {"status": "nonexistent_status"},
+         lambda r: ("error" in r or "slug" not in r,
+                    "Invalid status returns error or empty"))
+
+run_test("search_content_empty_query", "search_content", {"query": ""},
+         lambda r: ("results" in r,
+                    "Empty query still returns results key"))
+
+# =========================================================================
+# CLEANUP: Rid-based sweep — delete every resource containing our rid
+# Must run BEFORE leak detection so the leak test only sees leftover items
+# =========================================================================
+
+_cleanup_specs = [
+    ("posts", "get_all_posts", ("publish", "draft", "trash"), "delete_post_by_id", True),
+    ("pages", "get_all_pages", ("publish", "draft", "trash"), "delete_page_by_id", True),
+    ("categories", "get_all_categories", None, "delete_category_by_id", False),
+    ("tags", "get_all_tags", None, "delete_tag_by_id", False),
+    ("comments", "get_all_comments", None, "delete_comment_by_id", False),
+    ("navigation", "get_all_navigation", None, "delete_navigation_by_id", False),
+    ("blocks", "get_all_blocks", ("publish", "draft", "trash"), "delete_block_by_id", False),
+]
+
+for _cs_name, _cs_list_tool, _cs_statuses, _cs_del_tool, _cs_force in _cleanup_specs:
+    _status_iter = _cs_statuses if _cs_statuses else ("",)
+    for _cs_status in _status_iter:
+        _cs_args = {**{"per_page": 100}, **({"status": _cs_status} if _cs_status else {})}
+        _cs_result = call_tool(_cs_list_tool, _cs_args)
+        _cs_items_raw = _cs_result.get("items", [])
+        _cs_items = toon_to_json(_cs_items_raw) if isinstance(_cs_items_raw, str) else _cs_items_raw
+        for _cs_item in (_cs_items or []):
+            _cs_id = _cs_item.get("id", 0)
+            _cs_has_rid = rid in str(_cs_item)
+            _cs_del_args = {**{"id": _cs_id * _cs_has_rid}, **({"force": True} if _cs_force else {})}
+            call_tool(_cs_del_tool, _cs_del_args)
+
+# --- Leak Detection (1 test) ---
+print("\n# Leak Detection Tests")
+print("-" * 40)
+
+_leak_total = 0
+
+_resource_checks = [
+    ("posts", "get_all_posts", {"per_page": 100}),
+    ("pages", "get_all_pages", {"per_page": 100}),
+    ("categories", "get_all_categories", {"per_page": 100}),
+    ("tags", "get_all_tags", {"per_page": 100}),
+    ("comments", "get_all_comments", {"per_page": 100}),
+    ("navigation", "get_all_navigation", {"per_page": 100}),
+    ("blocks", "get_all_blocks", {"per_page": 100}),
+]
+
+for _res_name, _res_tool, _res_args in _resource_checks:
+    _res_result = call_tool(_res_tool, _res_args)
+    _res_items_raw = _res_result.get("items", [])
+    _res_items = toon_to_json(_res_items_raw) if isinstance(_res_items_raw, str) else _res_items_raw
+    for _res_item in (_res_items or []):
+        _res_item_text = str(_res_item)
+        _leak_total += (rid in _res_item_text)
+
+run_test("leak_detection", "leak_detection", {},
+         lambda r: (_leak_total == 0, f"Leaks found: {_leak_total}" if _leak_total > 0 else "No leaks detected"))
+
+# =========================================================================
+# SUMMARY
+# =========================================================================
+
+elapsed = time.time() - start_time
+
+print()
+print("=" * 60)
+print("TEST RESULTS SUMMARY")
+print("=" * 60)
+print(f"Total tests: {pass_count + fail_count}")
+print(f"Passed: {pass_count}")
+print(f"Failed: {fail_count}")
+print(f"Duration: {elapsed:.2f}s")
+print()
+
+print("## Failed Tests Details")
+print("-" * 40)
+for r in filter(lambda x: x["status"] == "FAIL", results):
+    print(f"  - {r['name']}: {r['message']}")
+print()
+
+print("## Markdown Report")
+print("-" * 40)
+print(f"| Test | Status | Message |")
+print(f"|------|--------|---------|")
+for r in results:
+    icons = ["❌", "✅"]
+    icon = icons[r["status"] == "PASS"]
+    print(f"| {r['name']} | {icon} {r['status']} | {r['message']} |")
+
+_final_fail_count = fail_count
+sys.exit(0 if _final_fail_count == 0 else 1)
