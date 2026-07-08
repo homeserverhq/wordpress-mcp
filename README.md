@@ -30,6 +30,7 @@ with full CRUD, search, and relationship management.
 | `WORDPRESS_BASE_URL` | Yes | Docker-internal URL of the WordPress server (e.g. `http://wordpress-web:80`). |
 | `MCP_SERVER_PORT` | Yes | Port number the MCP server listens on |
 | `ALLOW_ALL_AGGREGATE` | No | When `true`, aggregate listing tools honor the `include_all_fields` parameter. When `false` (default), the parameter is silently forced to `False` for aggregate list operations. |
+| `IS_STATEFUL` | No | When `true`, uses stateful Streamable HTTP with session tracking. When `false` (default), uses stateless mode. Defaults to `true`. |
 | `WORDPRESS_PUBLIC_URL` | No | Public-facing URL to replace internal Docker URLs in responses. Defaults to `WORDPRESS_BASE_URL` if not set. |
 
 ## 📦 Installation & Local Development
@@ -83,7 +84,7 @@ The server implements 46 MCP tools organized into the following categories:
 
 ### 📨 Posts (5 tools)
 
-- `get_all_posts` — List all posts with pagination and filters
+- `list_all_posts` — List all posts with pagination and filters
 - `get_post_by_id` — Get a single post by ID
 - `create_post` — Create a new post
 - `update_post` — Update an existing post
@@ -91,7 +92,7 @@ The server implements 46 MCP tools organized into the following categories:
 
 ### 📄 Pages (5 tools)
 
-- `get_all_pages` — List all pages with pagination and filters
+- `list_all_pages` — List all pages with pagination and filters
 - `get_page_by_id` — Get a single page by ID
 - `create_page` — Create a new page
 - `update_page` — Update an existing page
@@ -99,7 +100,7 @@ The server implements 46 MCP tools organized into the following categories:
 
 ### 📁 Categories (5 tools)
 
-- `get_all_categories` — List all categories with pagination and filters
+- `list_all_categories` — List all categories with pagination and filters
 - `get_category_by_id` — Get a single category by ID
 - `create_category` — Create a new category
 - `update_category` — Update an existing category
@@ -107,7 +108,7 @@ The server implements 46 MCP tools organized into the following categories:
 
 ### 🏷️ Tags (5 tools)
 
-- `get_all_tags` — List all tags with pagination and filters
+- `list_all_tags` — List all tags with pagination and filters
 - `get_tag_by_id` — Get a single tag by ID
 - `create_tag` — Create a new tag
 - `update_tag` — Update an existing tag
@@ -115,7 +116,7 @@ The server implements 46 MCP tools organized into the following categories:
 
 ### 💬 Comments (5 tools)
 
-- `get_all_comments` — List all comments with pagination and filters
+- `list_all_comments` — List all comments with pagination and filters
 - `get_comment_by_id` — Get a single comment by ID
 - `create_comment` — Create a new comment
 - `update_comment` — Update an existing comment
@@ -123,13 +124,13 @@ The server implements 46 MCP tools organized into the following categories:
 
 ### 👤 Users (3 tools)
 
-- `get_all_users` — List all users with pagination
+- `list_all_users` — List all users with pagination
 - `get_user_by_id` — Get a single user by ID
 - `get_current_user` — Get the current authenticated user
 
 ### 🧭 Navigation (5 tools)
 
-- `get_all_navigation` — List all navigation menus with pagination
+- `list_all_navigation` — List all navigation menus with pagination
 - `get_navigation_by_id` — Get a single navigation menu by ID
 - `create_navigation` — Create a new navigation menu
 - `update_navigation` — Update an existing navigation menu
@@ -137,7 +138,7 @@ The server implements 46 MCP tools organized into the following categories:
 
 ### 🧱 Blocks (5 tools)
 
-- `get_all_blocks` — List all reusable blocks with pagination and filters
+- `list_all_blocks` — List all reusable blocks with pagination and filters
 - `get_block_by_id` — Get a single block by ID
 - `create_block` — Create a new block
 - `update_block` — Update an existing block
@@ -145,11 +146,11 @@ The server implements 46 MCP tools organized into the following categories:
 
 ### 📋 Meta Tools (8 tools)
 
-- `get_taxonomies` — List all registered taxonomies
+- `list_all_taxonomies` — List all registered taxonomies
 - `get_taxonomy_by_name` — Get a specific taxonomy by name
-- `get_post_types` — List all post types
+- `list_all_post_types` — List all post types
 - `get_post_type_by_name` — Get a specific post type by name
-- `get_post_statuses` — List all post statuses
+- `list_all_post_statuses` — List all post statuses
 - `get_post_status_by_slug` — Get a specific post status by slug
 - `search_content` — Search across WordPress content
 - `get_server_status` — Check backend connectivity
