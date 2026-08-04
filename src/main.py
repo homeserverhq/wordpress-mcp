@@ -4,6 +4,7 @@ from contextvars import ContextVar
 from typing import Any, Literal, Optional
 
 from fastmcp import FastMCP, Context
+from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 from toon_mcp import json_to_toon
 
@@ -211,7 +212,9 @@ class UpdateBlockParam(BaseModel):
 # Posts Tools
 # =============================================================================
 
-@mcp.tool(tags={"read", "basic", "wordpress"})
+@mcp.tool(
+    tags={'basic', 'wordpress'}, annotations=ToolAnnotations(title="List All Posts", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_posts(
     include_all_fields: bool = False,
     status: str = "",
@@ -249,7 +252,9 @@ async def list_all_posts(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool(tags={"read", "basic", "wordpress"})
+@mcp.tool(
+    tags={'basic', 'wordpress'}, annotations=ToolAnnotations(title="Get Post By Id", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_post_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -266,7 +271,9 @@ async def get_post_by_id(
     )
 
 
-@mcp.tool(tags={"write", "basic", "wordpress"})
+@mcp.tool(
+    tags={'basic', 'wordpress'}, annotations=ToolAnnotations(title="Create Post", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
+)
 async def create_post(
     title: str,
     content: str,
@@ -312,7 +319,9 @@ async def create_post(
     )
 
 
-@mcp.tool(tags={"write", "basic", "wordpress"})
+@mcp.tool(
+    tags={'basic', 'wordpress'}, annotations=ToolAnnotations(title="Update Post", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def update_post(
     id: int,
     title: str = None,
@@ -374,7 +383,9 @@ async def update_post(
     return await get_client().update_post(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool(tags={"write", "basic", "wordpress"})
+@mcp.tool(
+    tags={'basic', 'wordpress'}, annotations=ToolAnnotations(title="Delete Post By Id", readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+)
 async def delete_post_by_id(
     id: int,
     force: bool = False,
@@ -396,7 +407,9 @@ async def delete_post_by_id(
 # Pages Tools
 # =============================================================================
 
-@mcp.tool(tags={"read", "basic", "wordpress"})
+@mcp.tool(
+    tags={'basic', 'wordpress'}, annotations=ToolAnnotations(title="List All Pages", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_pages(
     include_all_fields: bool = False,
     status: str = "",
@@ -437,7 +450,9 @@ async def list_all_pages(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool(tags={"read", "basic", "wordpress"})
+@mcp.tool(
+    tags={'basic', 'wordpress'}, annotations=ToolAnnotations(title="Get Page By Id", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_page_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -454,7 +469,9 @@ async def get_page_by_id(
     )
 
 
-@mcp.tool(tags={"write", "basic", "wordpress"})
+@mcp.tool(
+    tags={'basic', 'wordpress'}, annotations=ToolAnnotations(title="Create Page", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
+)
 async def create_page(
     title: str,
     content: str,
@@ -496,7 +513,9 @@ async def create_page(
     )
 
 
-@mcp.tool(tags={"write", "basic", "wordpress"})
+@mcp.tool(
+    tags={'basic', 'wordpress'}, annotations=ToolAnnotations(title="Update Page", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def update_page(
     id: int,
     title: str = None,
@@ -558,7 +577,9 @@ async def update_page(
     return await get_client().update_page(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool(tags={"write", "basic", "wordpress"})
+@mcp.tool(
+    tags={'basic', 'wordpress'}, annotations=ToolAnnotations(title="Delete Page By Id", readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+)
 async def delete_page_by_id(
     id: int,
     force: bool = False,
@@ -580,7 +601,9 @@ async def delete_page_by_id(
 # Categories Tools
 # =============================================================================
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="List All Categories", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_categories(
     include_all_fields: bool = False,
     per_page: int = 10,
@@ -615,7 +638,9 @@ async def list_all_categories(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Get Category By Id", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_category_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -632,7 +657,9 @@ async def get_category_by_id(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Create Category", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
+)
 async def create_category(
     name: str,
     slug: str,
@@ -657,7 +684,9 @@ async def create_category(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Update Category", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def update_category(
     id: int,
     name: str = None,
@@ -687,7 +716,9 @@ async def update_category(
     return await get_client().update_category(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Delete Category By Id", readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+)
 async def delete_category_by_id(
     id: int,
     ctx: Context = None
@@ -709,7 +740,9 @@ async def delete_category_by_id(
 # Tags Tools
 # =============================================================================
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="List All Tags", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_tags(
     include_all_fields: bool = False,
     per_page: int = 10,
@@ -741,7 +774,9 @@ async def list_all_tags(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Get Tag By Id", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_tag_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -758,7 +793,9 @@ async def get_tag_by_id(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Create Tag", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
+)
 async def create_tag(
     name: str,
     slug: str,
@@ -781,7 +818,9 @@ async def create_tag(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Update Tag", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def update_tag(
     id: int,
     name: str = None,
@@ -807,7 +846,9 @@ async def update_tag(
     return await get_client().update_tag(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Delete Tag By Id", readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+)
 async def delete_tag_by_id(
     id: int,
     ctx: Context = None
@@ -829,7 +870,9 @@ async def delete_tag_by_id(
 # Comments Tools
 # =============================================================================
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="List All Comments", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_comments(
     include_all_fields: bool = False,
     status: str = "",
@@ -867,7 +910,9 @@ async def list_all_comments(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Get Comment By Id", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_comment_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -884,7 +929,9 @@ async def get_comment_by_id(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Create Comment", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
+)
 async def create_comment(
     post: int,
     content: str,
@@ -914,7 +961,9 @@ async def create_comment(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Update Comment", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def update_comment(
     id: int,
     content: str = None,
@@ -944,7 +993,9 @@ async def update_comment(
     return await get_client().update_comment(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Delete Comment By Id", readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+)
 async def delete_comment_by_id(
     id: int,
     ctx: Context = None
@@ -966,7 +1017,9 @@ async def delete_comment_by_id(
 # Users Tools
 # =============================================================================
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="List All Users", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_users(
     include_all_fields: bool = False,
     per_page: int = 10,
@@ -1001,7 +1054,9 @@ async def list_all_users(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Get User By Id", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_user_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -1018,7 +1073,9 @@ async def get_user_by_id(
     )
 
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Get Current User", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_current_user(
     include_all_fields: bool = False,
     ctx: Context = None
@@ -1037,7 +1094,9 @@ async def get_current_user(
 # Navigation Tools
 # =============================================================================
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="List All Navigation", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_navigation(
     include_all_fields: bool = False,
     per_page: int = 10,
@@ -1063,7 +1122,9 @@ async def list_all_navigation(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Get Navigation By Id", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_navigation_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -1080,7 +1141,9 @@ async def get_navigation_by_id(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Create Navigation", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
+)
 async def create_navigation(
     title: str,
     status: PostStatus,
@@ -1108,7 +1171,9 @@ async def create_navigation(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Update Navigation", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def update_navigation(
     id: int,
     title: str = None,
@@ -1142,7 +1207,9 @@ async def update_navigation(
     return await get_client().update_navigation(id, payload, get_user_token(), include_all_fields=ALLOW_ALL_AGGREGATE)
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Delete Navigation By Id", readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+)
 async def delete_navigation_by_id(
     id: int,
     ctx: Context = None
@@ -1164,7 +1231,9 @@ async def delete_navigation_by_id(
 # Blocks Tools
 # =============================================================================
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="List All Blocks", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_blocks(
     include_all_fields: bool = False,
     status: str = "",
@@ -1193,7 +1262,9 @@ async def list_all_blocks(
     return {"items": json_to_toon(data)}
 
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Get Block By Id", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_block_by_id(
     id: int,
     include_all_fields: bool = False,
@@ -1210,7 +1281,9 @@ async def get_block_by_id(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Create Block", readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False)
+)
 async def create_block(
     title: str,
     content: str,
@@ -1238,7 +1311,9 @@ async def create_block(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Update Block", readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def update_block(
     id: int,
     title: str = None,
@@ -1274,7 +1349,9 @@ async def update_block(
     )
 
 
-@mcp.tool(tags={"write", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Delete Block By Id", readOnlyHint=False, destructiveHint=True, idempotentHint=False, openWorldHint=False)
+)
 async def delete_block_by_id(
     id: int,
     ctx: Context = None
@@ -1296,7 +1373,9 @@ async def delete_block_by_id(
 # Meta Tools
 # =============================================================================
 
-@mcp.tool(tags={"read", "advanced", "wordpress"})
+@mcp.tool(
+    tags={'advanced', 'wordpress'}, annotations=ToolAnnotations(title="List All Taxonomies", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_taxonomies(
     ctx: Context = None
 ) -> dict[str, Any]:
@@ -1304,7 +1383,9 @@ async def list_all_taxonomies(
     return await get_client().list_all_taxonomies(get_user_token())
 
 
-@mcp.tool(tags={"read", "advanced", "wordpress"})
+@mcp.tool(
+    tags={'advanced', 'wordpress'}, annotations=ToolAnnotations(title="Get Taxonomy By Name", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_taxonomy_by_name(
     name: str,
     ctx: Context = None
@@ -1317,7 +1398,9 @@ async def get_taxonomy_by_name(
     return await get_client().get_taxonomy_by_name(name, get_user_token())
 
 
-@mcp.tool(tags={"read", "advanced", "wordpress"})
+@mcp.tool(
+    tags={'advanced', 'wordpress'}, annotations=ToolAnnotations(title="List All Post Types", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_post_types(
     ctx: Context = None
 ) -> dict[str, Any]:
@@ -1325,7 +1408,9 @@ async def list_all_post_types(
     return await get_client().list_all_post_types(get_user_token())
 
 
-@mcp.tool(tags={"read", "advanced", "wordpress"})
+@mcp.tool(
+    tags={'advanced', 'wordpress'}, annotations=ToolAnnotations(title="Get Post Type By Name", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_post_type_by_name(
     type: str,
     ctx: Context = None
@@ -1338,7 +1423,9 @@ async def get_post_type_by_name(
     return await get_client().get_post_type_by_name(type, get_user_token())
 
 
-@mcp.tool(tags={"read", "advanced", "wordpress"})
+@mcp.tool(
+    tags={'advanced', 'wordpress'}, annotations=ToolAnnotations(title="List All Post Statuses", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def list_all_post_statuses(
     ctx: Context = None
 ) -> dict[str, Any]:
@@ -1346,7 +1433,9 @@ async def list_all_post_statuses(
     return await get_client().list_all_post_statuses(get_user_token())
 
 
-@mcp.tool(tags={"read", "advanced", "wordpress"})
+@mcp.tool(
+    tags={'advanced', 'wordpress'}, annotations=ToolAnnotations(title="Get Post Status By Slug", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_post_status_by_slug(
     status: str,
     ctx: Context = None
@@ -1359,7 +1448,9 @@ async def get_post_status_by_slug(
     return await get_client().get_post_status_by_slug(status, get_user_token())
 
 
-@mcp.tool(tags={"read", "primary", "wordpress"})
+@mcp.tool(
+    tags={'primary', 'wordpress'}, annotations=ToolAnnotations(title="Search Content", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def search_content(
     query: str,
     search_type: SearchType = "post",
@@ -1382,7 +1473,9 @@ async def search_content(
     return {"results": json_to_toon(data)}
 
 
-@mcp.tool(tags={"read", "advanced", "wordpress"})
+@mcp.tool(
+    tags={'advanced', 'wordpress'}, annotations=ToolAnnotations(title="Get Server Status", readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
+)
 async def get_server_status(
     ctx: Context = None
 ) -> dict[str, Any]:
